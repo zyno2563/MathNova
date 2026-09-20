@@ -1,0 +1,27 @@
+# Render.com blueprint — https://render.com/docs/blueprint-spec
+services:
+  - type: web
+    name: mathnova
+    runtime: python
+    # Free instances get 512 MB RAM and 0.1 CPU, and spin down after
+    # ~15 minutes of inactivity (the next request then pays a cold
+    # start). Change to `starter` for an always-on instance.
+    plan: free
+    buildCommand: pip install -r requirements.txt
+    # One worker on the free plan: two would contend for a tenth of a
+    # CPU and roughly double the resident memory for no throughput.
+    startCommand: uvicorn backend.main:app --host 0.0.0.0 --port $PORT --workers 1
+    healthCheckPath: /api/health
+    envVars:
+      - key: PYTHON_VERSION
+        value: "3.12.6"
+      # The per-calculation memory cap has to sit below the instance's
+      # total, or the container is OOM-killed before the cap can stop
+      # the calculation. A warm worker measures ~65 MB.
+      - key: MATHNOVA_COMPUTE_MEMORY_MB
+        value: "256"
+      # Optional — set the value in the Render dashboard, not here.
+      - key: GEMINI_API_KEY
+        sync: false
+      - key: MATHNOVA_AI_PROVIDER
+        value: auto

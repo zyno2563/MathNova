@@ -1,0 +1,124 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Settings &#8212; MathNova</title>
+  <meta name="description" content="Appearance and stored preferences for MathNova. Everything is kept in your own browser." />
+
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>&#8721;</text></svg>" />
+
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.css"
+        integrity="sha384-n8MVd4RsNIU0tAv4ct0nTaAbDJwPJzDEaqSD1odI+WdtXRGWt2kTvGFasHpSy3SV" crossorigin="anonymous" />
+  <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.js"
+          integrity="sha384-XjKyOOlGwcjNTAIQHIpgOno0Hl1YQqzUOEleOLALmuqehneUG+vnGctmUb0ZY0l8" crossorigin="anonymous"></script>
+
+  <link rel="stylesheet" href="/css/styles.css" />
+  <link rel="stylesheet" href="/css/pages.css" />
+</head>
+<body data-page="settings">
+
+<div class="shell">
+
+  <nav class="sidebar" id="sidebar" aria-label="Site navigation">
+    <div id="site-nav"></div>
+    <footer class="sidebar-foot">
+      <a href="/api/docs" target="_blank" rel="noopener">API reference &#8599;</a>
+    </footer>
+  </nav>
+
+  <div class="scrim" id="scrim" hidden></div>
+
+  <main class="main" id="main">
+    <div class="page">
+      <div class="page-head">
+        <h1>Settings</h1>
+        <p class="lede">
+          MathNova V1 has no account, so there is nothing to sync.
+          Everything below is stored in this browser only, and clearing
+          your site data clears it.
+        </p>
+      </div>
+
+      <h2>Appearance</h2>
+
+      <div class="setting">
+        <div>
+          <h3>Colour theme</h3>
+          <p>
+            <strong>System</strong> follows your device setting and
+            changes with it. Currently showing:
+            <strong id="theme-showing">&#8230;</strong>.
+          </p>
+        </div>
+
+        <div class="segmented" id="theme-choice" role="group"
+             aria-label="Colour theme">
+          <button type="button" data-theme="light" aria-pressed="false">Light</button>
+          <button type="button" data-theme="dark" aria-pressed="false">Dark</button>
+          <button type="button" data-theme="system" aria-pressed="false">System</button>
+        </div>
+      </div>
+
+      <div class="setting">
+        <div>
+          <h3>Reduced motion</h3>
+          <p>
+            Controlled by your operating system, not here. When your
+            device asks for reduced motion, MathNova drops its
+            transitions automatically.
+          </p>
+        </div>
+      </div>
+
+      <h2>AI Assistant</h2>
+
+      <div class="setting">
+        <div>
+          <h3>Availability</h3>
+          <p>
+            Whether the assistant is configured is decided on the server,
+            not in your browser.
+            Status: <strong id="assistant-state">checking&#8230;</strong>
+          </p>
+          <p id="assistant-hint" class="hint" hidden></p>
+        </div>
+      </div>
+
+      <p>
+        What the assistant sends and where it goes is described in the
+        <a href="/privacy/">Privacy Policy</a>.
+      </p>
+
+      <h2>Stored data</h2>
+
+      <div class="setting">
+        <div>
+          <h3>Reset preferences</h3>
+          <p>
+            Clears the theme choice stored by this browser. There is
+            nothing else to clear: MathNova keeps no history, no
+            accounts and no cookies.
+          </p>
+          <p id="reset-note" class="hint" hidden></p>
+        </div>
+
+        <button type="button" class="button ghost" id="reset-preferences">
+          Reset
+        </button>
+      </div>
+
+      <div class="callout">
+        <p>
+          Something not working as described here? Please tell us at
+          <a href="mailto:b66475781@gmail.com">b66475781@gmail.com</a>.
+        </p>
+      </div>
+    </div>
+  </main>
+
+</div>
+
+<script type="module" src="/js/page.js"></script>
+</body>
+</html>

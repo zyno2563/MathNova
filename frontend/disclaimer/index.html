@@ -1,0 +1,146 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>AI &amp; Mathematical Disclaimer &#8212; MathNova</title>
+  <meta name="description" content="What MathNova's verification does and does not guarantee, and why you should check results you rely on." />
+
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>&#8721;</text></svg>" />
+
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.css"
+        integrity="sha384-n8MVd4RsNIU0tAv4ct0nTaAbDJwPJzDEaqSD1odI+WdtXRGWt2kTvGFasHpSy3SV" crossorigin="anonymous" />
+  <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.js"
+          integrity="sha384-XjKyOOlGwcjNTAIQHIpgOno0Hl1YQqzUOEleOLALmuqehneUG+vnGctmUb0ZY0l8" crossorigin="anonymous"></script>
+
+  <link rel="stylesheet" href="/css/styles.css" />
+  <link rel="stylesheet" href="/css/pages.css" />
+</head>
+<body data-page="disclaimer">
+
+<div class="shell">
+
+  <nav class="sidebar" id="sidebar" aria-label="Site navigation">
+    <div id="site-nav"></div>
+    <footer class="sidebar-foot">
+      <a href="/api/docs" target="_blank" rel="noopener">API reference &#8599;</a>
+    </footer>
+  </nav>
+
+  <div class="scrim" id="scrim" hidden></div>
+
+  <main class="main" id="main">
+    <div class="page">
+      <div class="page-head">
+        <h1>AI &amp; Mathematical Disclaimer</h1>
+        <p class="lede">
+          MathNova checks its own work. That makes it more trustworthy
+          than a tool that does not &#8212; it does not make it correct
+          by definition.
+        </p>
+      </div>
+
+      <span class="updated">Last updated 20 September 2026</span>
+
+      <h2>What &#8220;verified&#8221; means here</h2>
+
+      <p>
+        When a result is marked as verified, an engine has checked it by
+        a route independent of the one that produced it &#8212;
+        substituting a solution back into the original equation,
+        transforming an inverse forward again, re-multiplying a solved
+        system by its matrix.
+      </p>
+
+      <p>
+        That is a real check and it catches real errors. What it cannot
+        do is prove the answer is the one you wanted. A verification
+        confirms internal consistency; it cannot know that you meant a
+        different branch, a different domain, or a different convention.
+      </p>
+
+      <h2>What it does not cover</h2>
+
+      <ul>
+        <li><strong>Your input.</strong> A correctly solved version of
+            the wrong equation is still the wrong answer. Ambiguous
+            notation is resolved by a parser, not by asking you what you
+            meant.</li>
+        <li><strong>Conventions.</strong> Transform definitions, constant
+            placement and sign conventions differ between textbooks and
+            courses. A result that disagrees with your notes may be
+            correct under a different convention.</li>
+        <li><strong>Unverified results.</strong> Where an engine cannot
+            check something it says so. Those answers carry no
+            verification at all.</li>
+        <li><strong>Numerical error.</strong> Numerical methods are
+            approximations by nature. Convergence reported against a
+            tolerance is not exactness.</li>
+      </ul>
+
+      <h2>The AI Assistant specifically</h2>
+
+      <p>
+        The assistant is a language model with tools. The
+        <em>calculations</em> come from the same verified engines the
+        Solver uses. The <em>explanation</em> around them is generated,
+        and generated text can be wrong, incomplete, or confidently
+        mistaken about what you asked.
+      </p>
+
+      <p>
+        The tool chips under an answer show which engines were called. If
+        an answer contains mathematics but no chips, the model very
+        likely produced it itself rather than calling an engine &#8212;
+        treat that as unverified, and please
+        <a href="/contact/">report it</a>.
+      </p>
+
+      <div class="callout warn">
+        <p>
+          <strong>Do not submit a MathNova answer as your own working
+          without checking it.</strong> It is a study and calculation
+          aid, and it is not a substitute for understanding the method,
+          for your own working, or for your own judgement. You remain
+          responsible for anything you hand in, publish or build on.
+        </p>
+      </div>
+
+      <h2>Not professional advice</h2>
+
+      <p>
+        MathNova is not engineering, financial, medical, safety or legal
+        advice, and must not be used as the sole basis for a decision
+        where a mistake would cause harm, loss or injury. Work intended
+        for real construction, manufacture, clinical use or public safety
+        must be independently verified by a qualified professional
+        exercising their own judgement.
+      </p>
+
+      <h2>No warranty</h2>
+
+      <p>
+        MathNova is provided &#8220;as is&#8221;, without warranty of any
+        kind, express or implied, including any warranty of accuracy,
+        fitness for a particular purpose, or uninterrupted availability.
+        To the fullest extent permitted by law, the operators accept no
+        liability for any loss or damage arising from its use.
+      </p>
+
+      <h2>Telling us when it is wrong</h2>
+
+      <p>
+        A wrong result is a defect and we want to know. Send the input
+        and the output to <a href="mailto:b66475781@gmail.com">b66475781@gmail.com</a>. An incorrect answer that still reports
+        itself as verified means the verification itself has a hole in
+        it, and is treated as a priority.
+      </p>
+
+    </div>
+  </main>
+
+</div>
+
+<script type="module" src="/js/page.js"></script>
+</body>
+</html>

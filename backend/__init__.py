@@ -1,0 +1,1 @@
+"""MathNova web backend (FastAPI)."""

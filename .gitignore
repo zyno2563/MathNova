@@ -12,10 +12,35 @@ venv/
 env/
 
 # Environment / secrets
+# Every .env variant is ignored; the committed example is the exception,
+# so a new one (.env.production, .env.staging) cannot be added by mistake.
 .env
-.env.local
+.env.*
+!.env.example
+
+# Test & coverage output
+.coverage
+.coverage.*
+htmlcov/
+junit*.xml
+
+# Build artefacts
+build/
+dist/
+*.egg-info/
+
+# Node (only used for local tooling; nothing here is shipped)
+node_modules/
+package-lock.json
+
+# Logs & local scratch
+*.log
+*.pid
 
 # OS / editor
 .DS_Store
+Thumbs.db
 .idea/
 .vscode/
+*.swp
+*~

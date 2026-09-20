@@ -1,0 +1,127 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>About &#8212; MathNova</title>
+  <meta name="description" content="What MathNova is, how its engines verify their own results, and how it is built." />
+
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>&#8721;</text></svg>" />
+
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.css"
+        integrity="sha384-n8MVd4RsNIU0tAv4ct0nTaAbDJwPJzDEaqSD1odI+WdtXRGWt2kTvGFasHpSy3SV" crossorigin="anonymous" />
+  <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.js"
+          integrity="sha384-XjKyOOlGwcjNTAIQHIpgOno0Hl1YQqzUOEleOLALmuqehneUG+vnGctmUb0ZY0l8" crossorigin="anonymous"></script>
+
+  <link rel="stylesheet" href="/css/styles.css" />
+  <link rel="stylesheet" href="/css/pages.css" />
+</head>
+<body data-page="about">
+
+<div class="shell">
+
+  <nav class="sidebar" id="sidebar" aria-label="Site navigation">
+    <div id="site-nav"></div>
+    <footer class="sidebar-foot">
+      <a href="/api/docs" target="_blank" rel="noopener">API reference &#8599;</a>
+    </footer>
+  </nav>
+
+  <div class="scrim" id="scrim" hidden></div>
+
+  <main class="main" id="main">
+    <div class="page">
+      <div class="page-head">
+        <h1>About MathNova</h1>
+        <p class="lede">
+          MathNova is an engineering-mathematics engine with a web
+          interface. It solves the problems an engineering syllabus sets,
+          and checks each answer before showing it.
+        </p>
+      </div>
+
+      <h2>The idea</h2>
+
+      <p>
+        Most tools that do symbolic mathematics give you an answer and
+        leave the checking to you. That is fine when you already know
+        what the answer should look like, and useless when you do not
+        &#8212; which is exactly when you reached for the tool.
+      </p>
+
+      <p>
+        So every MathNova engine verifies its own work by an independent
+        route. A solved differential equation is substituted back into
+        the original operator and the residual must come out zero. An
+        inverse transform is transformed forward again and compared. A
+        linear system&#8217;s solution is re-multiplied by its matrix. A
+        derivative is re-derived implicitly. When a check passes, the
+        result says so; when an engine cannot verify something, it says
+        that instead of presenting an unchecked answer as fact.
+      </p>
+
+      <p>
+        This is not a formality. Several genuine errors &#8212; a dropped
+        factor in a Z-transform, a wrong binomial coefficient for a
+        repeated pole &#8212; were caught by these checks during
+        development, in results that looked entirely reasonable.
+      </p>
+
+      <h2>How it is built</h2>
+
+      <dl class="rows">
+        <div>
+          <dt>Mathematics</dt>
+          <dd>Pure Python engines over SymPy, NumPy and SciPy, with no web
+              framework imports. They are covered by their own test
+              suite and are unchanged by anything in the interface.</dd>
+        </div>
+        <div>
+          <dt>API</dt>
+          <dd>A FastAPI layer that validates input, calls an engine, and
+              serialises the result to both plain text and LaTeX. It is
+              documented at <a href="/api/docs">/api/docs</a>.</dd>
+        </div>
+        <div>
+          <dt>Interface</dt>
+          <dd>Static HTML, CSS and JavaScript &#8212; no build step and no
+              framework. Mathematics is typeset with KaTeX.</dd>
+        </div>
+        <div>
+          <dt>Assistant</dt>
+          <dd>Provider-agnostic. The model is given tools that call the
+              verified engines, and is instructed to use them rather than
+              compute anything itself.</dd>
+        </div>
+        <div>
+          <dt>Safety</dt>
+          <dd>Each calculation runs in its own short-lived process under a
+              time limit and a memory cap, so no single expression can
+              hang the service.</dd>
+        </div>
+      </dl>
+
+      <h2>Scope of V1</h2>
+
+      <p>
+        This first version deliberately has no accounts, no saved work
+        and no history. There is nothing to sign up for. Open a page,
+        use it, close it.
+      </p>
+
+      <h2>Contact</h2>
+
+      <p>
+        Bug reports, corrections and questions all go to the same place:
+        <a href="mailto:b66475781@gmail.com">b66475781@gmail.com</a>. A wrong result with the input that produced it is the
+        most useful thing you can send. See
+        <a href="/contact/">Contact &amp; Support</a> for what to include.
+      </p>
+    </div>
+  </main>
+
+</div>
+
+<script type="module" src="/js/page.js"></script>
+</body>
+</html>

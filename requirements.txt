@@ -1,0 +1,23 @@
+# MathNova — production dependencies
+#
+# Lower bounds are what the app is developed and tested against; the
+# upper bounds keep a surprise major release from breaking a deploy.
+
+# Web layer
+fastapi>=0.115,<1.0
+uvicorn[standard]>=0.30,<1.0
+pydantic>=2.7,<3.0
+
+# Mathematics engines
+sympy>=1.13,<2.0
+numpy>=1.26,<3.0
+scipy>=1.11,<2.0
+
+# AI Mathematics Assistant — Google Gemini free tier.
+# An API key from Google AI Studio needs no billing account. The
+# assistant is optional: every mathematics module works without it,
+# and the local-model provider needs no package at all.
+google-genai>=1.40,<2.0
+
+# Configuration
+python-dotenv>=1.0,<2.0

@@ -1,0 +1,187 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Learn &#8212; MathNova</title>
+  <meta name="description" content="The methods behind MathNova's answers: transforms, differential equations, numerical analysis and linear algebra, explained." />
+
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>&#8721;</text></svg>" />
+
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.css"
+        integrity="sha384-n8MVd4RsNIU0tAv4ct0nTaAbDJwPJzDEaqSD1odI+WdtXRGWt2kTvGFasHpSy3SV" crossorigin="anonymous" />
+  <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.js"
+          integrity="sha384-XjKyOOlGwcjNTAIQHIpgOno0Hl1YQqzUOEleOLALmuqehneUG+vnGctmUb0ZY0l8" crossorigin="anonymous"></script>
+
+  <link rel="stylesheet" href="/css/styles.css" />
+  <link rel="stylesheet" href="/css/pages.css" />
+</head>
+<body data-page="learn">
+
+<div class="shell">
+
+  <nav class="sidebar" id="sidebar" aria-label="Site navigation">
+    <div id="site-nav"></div>
+    <footer class="sidebar-foot">
+      <a href="/api/docs" target="_blank" rel="noopener">API reference &#8599;</a>
+    </footer>
+  </nav>
+
+  <div class="scrim" id="scrim" hidden></div>
+
+  <main class="main" id="main">
+    <div class="page">
+      <div class="page-head">
+        <h1>Learn</h1>
+        <p class="lede">
+          Every module in the Solver applies a method you can follow by
+          hand. This is what each one does, when it applies, and what to
+          check when the answer looks wrong.
+        </p>
+      </div>
+
+      <h2>Transforms</h2>
+
+      <h3>Laplace</h3>
+      <p>
+        The Laplace transform turns differentiation into multiplication,
+        which is what makes it useful for linear differential equations
+        with constant coefficients: an equation in <code>t</code> becomes
+        an algebraic equation in <code>s</code>, you solve the algebra,
+        and you invert.
+      </p>
+      <p>
+        The shifting theorems do most of the work in practice. The first
+        shifting theorem handles <code>e^(at) f(t)</code> by replacing
+        <code>s</code> with <code>s - a</code>; the second handles a
+        delayed function. If a transform looks unfamiliar, it is usually
+        a standard one with a shift applied.
+        <a href="/solver/#transforms">Try it in the Solver &#8594;</a>
+      </p>
+
+      <h3>Fourier</h3>
+      <p>
+        Where Laplace suits initial-value problems, the Fourier transform
+        suits signals defined over all of <code>x</code>. The sine and
+        cosine transforms are the odd and even halves of it, and are the
+        right choice on a half-range.
+      </p>
+
+      <h3>Z</h3>
+      <p>
+        The discrete counterpart: sequences rather than functions,
+        difference equations rather than differential ones. The inverse
+        is where most errors happen, because a repeated pole changes the
+        form of the answer &#8212; a pole of multiplicity <code>m</code>
+        contributes a binomial factor, and getting that factor wrong
+        produces a sequence that is right at <code>n = 0</code> and wrong
+        everywhere after.
+        <a href="/solver/#transforms">Try it in the Solver &#8594;</a>
+      </p>
+
+      <h2>Ordinary differential equations</h2>
+
+      <p>
+        For a linear equation with constant coefficients the solution
+        splits in two. The <strong>complementary function</strong> comes
+        from the auxiliary equation&#8217;s roots: distinct real roots give
+        exponentials, a repeated root multiplies by <code>x</code>, and a
+        complex pair gives a sine and cosine.
+      </p>
+
+      <p>
+        The <strong>particular integral</strong> depends on the forcing
+        term. The one case worth watching is resonance &#8212; when the
+        forcing matches a root of the auxiliary equation, the ordinary
+        formula divides by zero and the answer picks up a factor of
+        <code>x</code>. MathNova reports resonance and its multiplicity
+        explicitly, because it is the most common place a hand
+        calculation goes wrong.
+        <a href="/solver/#ode">Try it in the Solver &#8594;</a>
+      </p>
+
+      <h3>First-order equations</h3>
+      <p>
+        Four methods cover most of a syllabus: separate the variables
+        when it separates; use an integrating factor when it is linear;
+        substitute <code>v = y^(1-n)</code> for Bernoulli; and check
+        exactness before anything else, because an exact equation is the
+        quickest of the four when it applies.
+      </p>
+
+      <h2>Partial differential equations</h2>
+
+      <p>
+        Forming a PDE means eliminating the arbitrary constants from a
+        relation: differentiate with respect to each variable, then
+        eliminate. Lagrange&#8217;s linear equation
+        <code>Pp + Qq = R</code> is solved through the auxiliary system
+        <code>dx/P = dy/Q = dz/R</code>, giving two independent
+        integrals whose arbitrary function is the general solution.
+        <a href="/solver/#pde">Try it in the Solver &#8594;</a>
+      </p>
+
+      <h2>Numerical methods</h2>
+
+      <p>
+        Numerical methods trade exactness for reach: they answer
+        questions that have no closed form. The cost is that every answer
+        carries an error, and the method you choose decides how that
+        error behaves.
+      </p>
+
+      <ul>
+        <li><strong>Bisection</strong> always converges if the bracket is
+            valid, but slowly &#8212; one bit per step.</li>
+        <li><strong>Newton&#8211;Raphson</strong> converges quadratically
+            when it converges at all, and diverges readily from a poor
+            starting point or a near-zero derivative.</li>
+        <li><strong>Secant</strong> avoids needing the derivative, at a
+            slightly slower rate than Newton.</li>
+        <li><strong>Simpson&#8217;s rules</strong> integrate exactly up to
+            cubics, so they beat the trapezoidal rule on smooth
+            integrands &#8212; but 1/3 needs an even number of intervals
+            and 3/8 a multiple of three.</li>
+      </ul>
+
+      <p><a href="/solver/#numerical">Try them in the Solver &#8594;</a></p>
+
+      <h2>Linear algebra</h2>
+
+      <p>
+        Eigenvalues come from the characteristic polynomial, and for
+        anything past 3&#215;3 the exact roots stop being expressible in
+        a useful closed form. MathNova keeps results exact where exact
+        form exists and is explicit when it does not, rather than
+        silently switching to decimals.
+        <a href="/solver/#linear-algebra">Try it in the Solver &#8594;</a>
+      </p>
+
+      <h2>Fourier series</h2>
+
+      <p>
+        A periodic function becomes a sum of harmonics. The coefficients
+        are integrals over one period, and the partial sum shows how
+        quickly the series converges &#8212; slowly near a jump, where
+        the overshoot at a discontinuity never quite disappears no matter
+        how many terms you take.
+        <a href="/solver/#fourier-series">Try it in the Solver &#8594;</a>
+      </p>
+
+      <div class="callout warn">
+        <p>
+          <strong>Learning, not authority.</strong> These summaries are a
+          short orientation, not a textbook and not a substitute for your
+          course notes. Check anything you are going to rely on &#8212;
+          see the <a href="/disclaimer/">AI &amp; Mathematical
+          Disclaimer</a>.
+        </p>
+      </div>
+    </div>
+  </main>
+
+</div>
+
+<script type="module" src="/js/page.js"></script>
+</body>
+</html>

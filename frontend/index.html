@@ -1,0 +1,146 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>MathNova &#8212; Engineering Mathematics Engine</title>
+  <meta name="description" content="Symbolic and numerical engineering mathematics: Fourier series, calculus, linear algebra, ODEs, PDEs, numerical methods and transforms." />
+
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>&#8721;</text></svg>" />
+
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.css"
+        integrity="sha384-n8MVd4RsNIU0tAv4ct0nTaAbDJwPJzDEaqSD1odI+WdtXRGWt2kTvGFasHpSy3SV" crossorigin="anonymous" />
+  <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.js"
+          integrity="sha384-XjKyOOlGwcjNTAIQHIpgOno0Hl1YQqzUOEleOLALmuqehneUG+vnGctmUb0ZY0l8" crossorigin="anonymous"></script>
+
+  <link rel="stylesheet" href="/css/styles.css" />
+  <link rel="stylesheet" href="/css/pages.css" />
+</head>
+<body data-page="home">
+
+<div class="shell">
+
+  <nav class="sidebar" id="sidebar" aria-label="Site navigation">
+    <div id="site-nav"></div>
+    <footer class="sidebar-foot">
+      <a href="/api/docs" target="_blank" rel="noopener">API reference &#8599;</a>
+    </footer>
+  </nav>
+
+  <div class="scrim" id="scrim" hidden></div>
+
+  <main class="main" id="main">
+    <section class="hero">
+      <h1>Engineering mathematics,<br />worked and checked.</h1>
+      <p class="lede">
+        MathNova solves the mathematics an engineering course actually
+        sets &#8212; transforms, differential equations, matrices, numerical
+        methods &#8212; and checks each answer by a second, independent route
+        before showing it to you.
+      </p>
+
+      <div class="hero-actions">
+        <a class="button primary large" href="/solver/">Open the Solver</a>
+        <a class="button ghost large" href="/assistant/">Ask the AI Assistant</a>
+      </div>
+    </section>
+
+    <h2>What it covers</h2>
+
+    <div class="card-grid">
+      <a class="tile" href="/solver/#transforms">
+        <span class="tile-glyph" aria-hidden="true">&#8747;</span>
+        <h3>Transforms</h3>
+        <p>Laplace and inverse Laplace, Fourier (complex, sine, cosine),
+           Z and inverse Z, with the standard shifting and scaling rules.</p>
+      </a>
+
+      <a class="tile" href="/solver/#ode">
+        <span class="tile-glyph" aria-hidden="true">&#8706;</span>
+        <h3>Differential equations</h3>
+        <p>Complementary function, particular integral and complete
+           solution; separable, linear, Bernoulli and exact first-order
+           methods.</p>
+      </a>
+
+      <a class="tile" href="/solver/#pde">
+        <span class="tile-glyph" aria-hidden="true">&#8711;</span>
+        <h3>Partial differential equations</h3>
+        <p>Formation by eliminating constants, Lagrange&#8217;s linear
+           equation, and the four standard first-order types.</p>
+      </a>
+
+      <a class="tile" href="/solver/#numerical">
+        <span class="tile-glyph" aria-hidden="true">&#8776;</span>
+        <h3>Numerical methods</h3>
+        <p>Bisection, Newton&#8211;Raphson, secant; finite differences;
+           trapezoidal and Simpson; interpolation; Gauss, Jacobi and
+           Gauss&#8211;Seidel.</p>
+      </a>
+
+      <a class="tile" href="/solver/#linear-algebra">
+        <span class="tile-glyph" aria-hidden="true">&#9636;</span>
+        <h3>Linear algebra</h3>
+        <p>Determinant, rank, inverse, eigenvalues and eigenvectors,
+           kept in exact form wherever exact form exists.</p>
+      </a>
+
+      <a class="tile" href="/solver/#fourier-series">
+        <span class="tile-glyph" aria-hidden="true">&#8721;</span>
+        <h3>Fourier series</h3>
+        <p>Coefficients a&#8320;, a&#8345;, b&#8345;, the partial-sum
+           reconstruction, and the error at a sample point.</p>
+      </a>
+    </div>
+
+    <h2>Why the answers are checked</h2>
+
+    <p>
+      A symbolic result that looks plausible and is wrong is worse than
+      no result. So every engine verifies its own work by a route that
+      does not reuse the step being tested: a solved ODE is substituted
+      back into the original operator and the residual must be zero, an
+      inverse transform is transformed forward again, a linear system is
+      re-multiplied, a derivative is re-derived implicitly.
+    </p>
+
+    <p>
+      Where a check passes, the result says so. Where an engine cannot
+      verify something, it tells you rather than quietly presenting an
+      unchecked answer. That discipline is the point of the project
+      &#8212; it is also how several real errors were found and fixed
+      during development.
+    </p>
+
+    <h2>Getting started</h2>
+
+    <ul>
+      <li><strong><a href="/solver/">Solver</a></strong> &#8212; pick a
+          module, fill in the form, read the worked result. Every method
+          ships with a worked example you can load in one click.</li>
+      <li><strong><a href="/learn/">Learn</a></strong> &#8212; the method
+          behind each answer, in the order a textbook would present it.</li>
+      <li><strong><a href="/assistant/">AI Assistant</a></strong> &#8212;
+          ask in plain English; the assistant calls the same verified
+          engines rather than doing the algebra itself.</li>
+    </ul>
+
+    <div class="callout">
+      <p>
+        <strong>No account needed.</strong> MathNova V1 has no sign-up,
+        no login and no saved history. Open a page and use it.
+      </p>
+    </div>
+
+    <p>
+      Found something wrong? Please report it to
+      <a href="mailto:b66475781@gmail.com">b66475781@gmail.com</a> &#8212; a wrong answer with the
+      input that produced it is the single most useful bug report.
+    </p>
+  </main>
+
+</div>
+
+<script type="module" src="/js/page.js"></script>
+</body>
+</html>

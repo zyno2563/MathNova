@@ -1,0 +1,15 @@
+services:
+  mathnova:
+    build: .
+    image: mathnova:latest
+    ports:
+      - "8000:8000"
+    environment:
+      # Optional: reads GEMINI_API_KEY from your shell or .env file.
+      GEMINI_API_KEY: ${GEMINI_API_KEY:-}
+      MATHNOVA_AI_PROVIDER: ${MATHNOVA_AI_PROVIDER:-auto}
+      WEB_CONCURRENCY: 2
+    env_file:
+      - path: .env
+        required: false
+    restart: unless-stopped
