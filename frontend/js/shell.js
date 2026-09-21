@@ -44,6 +44,29 @@ export function mountShell({ current, assistant = true } = {}) {
   if (assistant) {
     mountAssistantPanel();
   }
+
+  registerServiceWorker();
+}
+
+/**
+ * Make the site installable (and publishable as an Android app).
+ *
+ * Failure is silent on purpose: the worker only adds an offline page,
+ * and the site works exactly as before without it.
+ */
+function registerServiceWorker() {
+  if (!('serviceWorker' in navigator)) return;
+
+  const register = () =>
+    navigator.serviceWorker.register('/sw.js').catch(() => {});
+
+  // After load, so installing it never competes with the first paint —
+  // but register immediately if load has already happened.
+  if (document.readyState === 'complete') {
+    register();
+  } else {
+    window.addEventListener('load', register, { once: true });
+  }
 }
 
 /* ---------- markup ---------- */
