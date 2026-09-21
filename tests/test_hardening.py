@@ -582,7 +582,7 @@ def test_no_api_response_names_the_ai_vendor_or_model(configured):
         client.post("/api/assistant/chat", json={"message": ""}),
     ]
 
-    forbidden = ("gemini", "google", "ollama", "anthropic", "claude",
+    forbidden = ("gemini", "google", "groq", "ollama", "anthropic", "claude",
                  "aistudio", "generativelanguage", "free tier")
 
     for response in surfaces:
@@ -609,7 +609,7 @@ def test_an_unavailable_assistant_says_so_without_naming_anything(monkeypatch):
     for text in (status["message"], chat.json()["error"]["message"]):
         lowered = text.lower()
 
-        for term in ("gemini", "google", "ollama", "aistudio", "api key",
+        for term in ("gemini", "google", "groq", "ollama", "aistudio", "api key",
                      "free tier"):
             assert term not in lowered, f"{term!r} leaked in: {text}"
 

@@ -20,7 +20,10 @@ services:
       # 512 MB, or the container is OOM-killed before the cap can act.
       - key: MATHNOVA_COMPUTE_MEMORY_MB
         value: "256"
-      # Optional — set the value in the Render dashboard, not here.
+      # Set the values in the Render dashboard, not here. Groq answers
+      # first; Gemini takes over when Groq's free allowance is spent.
+      - key: GROQ_API_KEY
+        sync: false
       - key: GEMINI_API_KEY
         sync: false
       - key: MATHNOVA_AI_PROVIDER

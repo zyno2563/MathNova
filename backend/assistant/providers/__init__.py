@@ -14,15 +14,19 @@ from backend.assistant.providers.base import (
     ProviderError,
 )
 from backend.assistant.providers.gemini import GeminiProvider
+from backend.assistant.providers.groq import GroqProvider
 from backend.assistant.providers.local import LocalProvider
 
-#: Tried in order when MATHNOVA_AI_PROVIDER is "auto".
 REGISTRY = {
+    GroqProvider.name: GroqProvider,
     GeminiProvider.name: GeminiProvider,
     LocalProvider.name: LocalProvider,
 }
 
-PREFERENCE = (GeminiProvider, LocalProvider)
+#: Tried in order when MATHNOVA_AI_PROVIDER is "auto". Groq's free tier
+#: is far larger than Gemini's, so it leads; Gemini picks up when Groq's
+#: allowance for the day is spent.
+PREFERENCE = (GroqProvider, GeminiProvider, LocalProvider)
 
 
 def configured_name():
@@ -68,10 +72,29 @@ def resolve():
             return cls()
 
     raise NotConfigured(
-        "No AI provider is configured. " + GeminiProvider.setup_hint()
-        + " Alternatively, " + LocalProvider.setup_hint()[0].lower()
-        + LocalProvider.setup_hint()[1:]
+        "No AI provider is configured. " + GroqProvider.setup_hint()
+        + " Or: " + GeminiProvider.setup_hint()
     )
+
+
+def chain():
+    """
+    Providers to try for one request, in order.
+
+    With "auto", every configured provider — so when one reaches its free
+    limit the request falls through to the next. An explicit choice is
+    honoured alone, never silently widened.
+    """
+
+    if configured_name() != "auto":
+        return [resolve()]
+
+    ready = [cls() for cls in PREFERENCE if cls.is_configured()]
+
+    if not ready:
+        resolve()  # raises the explanatory NotConfigured
+
+    return ready
 
 
 def status():
@@ -107,12 +130,14 @@ def status():
 __all__ = [
     "ChatResult",
     "GeminiProvider",
+    "GroqProvider",
     "LocalProvider",
     "NotConfigured",
     "Provider",
     "ProviderError",
     "REGISTRY",
     "available",
+    "chain",
     "configured_name",
     "resolve",
     "status",

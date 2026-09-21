@@ -188,15 +188,20 @@ code with tests behind it, not from a language model.
 
 | Provider | Requirement | Default model |
 |---|---|---|
+| `groq` | A free [Groq key](https://console.groq.com/keys) — no card | `openai/gpt-oss-120b`, then two more |
 | `gemini` | A free [AI Studio key](https://aistudio.google.com/apikey) — no billing | `gemini-3.6-flash` |
 | `local` | Ollama running locally — no key, fully offline | `llama3.1` |
 
-`MATHNOVA_AI_PROVIDER` picks one; the default `auto` takes the first
-that is ready, preferring Gemini. An explicit choice is never silently
-replaced — if you ask for `local` and it is not running, the error says
-so rather than quietly billing a cloud provider.
+`MATHNOVA_AI_PROVIDER` picks one; the default `auto` tries every provider
+that is configured, Groq first, and falls through to the next when one
+has reached its free limit or is overloaded. Free tiers are small —
+Gemini's allows 20 requests per model per day, and one answer takes about
+three — so stacking them is what keeps the assistant answering. An
+explicit choice is never silently widened: if you ask for `local` and it
+is not running, the error says so rather than quietly using a cloud
+provider.
 
-Adding a third backend means writing one module and listing it in
+Adding another backend means writing one module and listing it in
 `providers/__init__.py`. Nothing above that package changes.
 
 Without any provider configured the endpoint returns a clean `503`, the

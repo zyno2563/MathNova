@@ -157,7 +157,7 @@ def test_the_ui_names_no_ai_vendor():
     """
 
     for route, html in page_sources().items():
-        assert not re.search(r"anthropic|\bclaude\b|gemini|ollama", html, re.I), (
+        assert not re.search(r"anthropic|\bclaude\b|gemini|groq|ollama", html, re.I), (
             f"{route} names an AI vendor; the UI must stay provider-neutral"
         )
 
@@ -165,7 +165,7 @@ def test_the_ui_names_no_ai_vendor():
         source = read("js", source_name)
 
         assert not re.search(
-            r"anthropic|\bclaude\b|gemini|ollama", source, re.I
+            r"anthropic|\bclaude\b|gemini|groq|ollama", source, re.I
         ), (
             f"{source_name} names an AI vendor or an API key variable; the "
             f"provider name must come from /api/assistant/status"

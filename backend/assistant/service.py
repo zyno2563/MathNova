@@ -86,8 +86,16 @@ BUSY_MESSAGE = (
 
 #: Public replacements for provider error messages, which name the
 #: vendor, its pricing tier and its models.
+#: A daily cap is not "busy": waiting a moment does nothing, and saying
+#: so sent people round a retry loop that could never succeed.
+DAILY_LIMIT_MESSAGE = (
+    "The AI assistant has reached its free usage limit for today. Please "
+    "try again later — every other MathNova module works without it."
+)
+
 _PUBLIC_MESSAGES = {
     "assistant_unavailable": UNAVAILABLE_MESSAGE,
+    "assistant_daily_limit": DAILY_LIMIT_MESSAGE,
     "assistant_rate_limited": BUSY_MESSAGE,
     "assistant_busy": BUSY_MESSAGE,
     "assistant_model_unavailable": UNAVAILABLE_MESSAGE,
@@ -138,33 +146,80 @@ def status():
     }
 
 
+#: Failures another provider may not share: limits, overload, a retired
+#: or missing model, a backend that is down or unconfigured.
+_FALL_THROUGH = {
+    "assistant_daily_limit",
+    "assistant_rate_limited",
+    "assistant_busy",
+    "assistant_model_unavailable",
+    "assistant_unavailable",
+}
+
+
+def _most_telling(failures):
+    """
+    Which failure to report when every provider was exhausted.
+
+    "Today's limit is reached" only when that is true of all of them;
+    otherwise a shorter wait might work, and saying so is more useful.
+    """
+
+    if all(error.code == "assistant_daily_limit" for error in failures):
+        return failures[-1]
+
+    for code in ("assistant_rate_limited", "assistant_busy"):
+        for error in failures:
+            if error.code == code:
+                return error
+
+    return failures[-1]
+
+
 def chat(message, history=None, module_context=None):
     """Run one assistant turn and return the reply plus any tools used."""
 
     try:
-        provider = providers.resolve()
+        candidates = providers.chain()
     except providers.ProviderError as error:
         raise _public_error(error)
 
     conversation = _history(history, message, module_context)
 
-    try:
-        result = provider.chat(
-            system=SYSTEM_PROMPT,
-            messages=conversation,
-            tools=TOOLS,
-            max_tool_turns=settings.ASSISTANT_MAX_TOOL_TURNS,
-            max_output_tokens=settings.ASSISTANT_MAX_TOKENS,
-        )
-    except providers.ProviderError as error:
-        raise _public_error(error)
-    except Exception as error:  # noqa: BLE001 - last line of defence
-        logger.exception("Assistant turn failed")
-        raise EngineError(
-            502,
-            "assistant_error",
-            _PUBLIC_MESSAGES["assistant_error"],
-        )
+    result = None
+    failures = []
+
+    for provider in candidates:
+        try:
+            result = provider.chat(
+                system=SYSTEM_PROMPT,
+                messages=conversation,
+                tools=TOOLS,
+                max_tool_turns=settings.ASSISTANT_MAX_TOOL_TURNS,
+                max_output_tokens=settings.ASSISTANT_MAX_TOKENS,
+            )
+            break
+        except providers.ProviderError as error:
+            failures.append(error)
+
+            if error.code not in _FALL_THROUGH:
+                # Not a capacity problem: another provider would not help.
+                raise _public_error(error)
+
+            logger.warning(
+                "Provider %s could not answer (%s); trying the next one",
+                provider.name, error.code,
+            )
+        except Exception:  # noqa: BLE001 - last line of defence
+            logger.exception("Assistant turn failed")
+            raise EngineError(
+                502,
+                "assistant_error",
+                _PUBLIC_MESSAGES["assistant_error"],
+            )
+
+    if result is None:
+        raise _public_error(_most_telling(failures))
 
     payload = result.as_dict()
 

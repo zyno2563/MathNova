@@ -255,6 +255,18 @@ class GeminiProvider(Provider):
             )
 
         if "429" in text or "resource_exhausted" in lowered or "quota" in lowered:
+            # The free tier's binding limit is per *day* (20 requests per
+            # model), and "wait a moment" is wrong advice for that one.
+            # Google names the quota that tripped, e.g.
+            # GenerateRequestsPerDayPerProjectPerModel-FreeTier.
+            if "perday" in lowered or "per day" in lowered:
+                return ProviderError(
+                    "The Gemini free tier daily limit was reached. It resets "
+                    "at midnight Pacific time.",
+                    status=429,
+                    code="assistant_daily_limit",
+                )
+
             return ProviderError(
                 "The Gemini free tier rate limit was reached. Wait a moment "
                 "and try again.",
