@@ -96,6 +96,118 @@ def test_a_memory_bomb_is_capped_rather_than_swapping(monkeypatch):
         run_guarded(hog, timeout=60)
 
 
+def test_the_memory_cap_is_an_allowance_on_top_of_the_inherited_baseline(
+    monkeypatch, tmp_path
+):
+    """
+    Regression: on Render every calculation failed with MemoryError.
+
+    RLIMIT_AS counts every mapping the forked child inherits — the
+    interpreter, SymPy, NumPy, OpenBLAS buffers — which on Linux is
+    hundreds of megabytes before any work starts. An absolute 256 MB cap
+    sat below that baseline. macOS refuses both limits outright, so this
+    never showed locally; the ceiling is therefore checked by recording
+    what would be set, against a Linux-shaped /proc/self/status.
+    """
+
+    import resource
+
+    from backend import compute
+
+    status = tmp_path / "status"
+    status.write_text(
+        "Name:\tpython\n"
+        "VmSize:\t  921600 kB\n"   # 900 MB of inherited address space
+        "VmData:\t  307200 kB\n"   # 300 MB of it private data
+    )
+
+    real_usage = compute._current_usage
+    monkeypatch.setattr(compute, "_current_usage",
+                        lambda: real_usage(str(status)))
+    monkeypatch.setattr("backend.config.settings.COMPUTE_MEMORY_MB", 256)
+
+    recorded = {}
+    monkeypatch.setattr(resource, "getrlimit",
+                        lambda c: (resource.RLIM_INFINITY, resource.RLIM_INFINITY))
+    monkeypatch.setattr(resource, "setrlimit",
+                        lambda c, pair: recorded.__setitem__(c, pair[0]))
+
+    compute._apply_child_limits()
+
+    mb = 1024 * 1024
+
+    assert recorded[resource.RLIMIT_AS] == (900 + 256) * mb, (
+        "the address-space cap must sit above what the child inherited"
+    )
+    assert recorded[resource.RLIMIT_DATA] == (300 + 256) * mb
+
+
+def test_usage_is_read_from_proc_status(tmp_path):
+    from backend.compute import _current_usage
+
+    status = tmp_path / "status"
+    status.write_text("VmSize:\t 2048 kB\nVmData:\t 1024 kB\nVmRSS:\t 512 kB\n")
+
+    assert _current_usage(str(status)) == {
+        "RLIMIT_AS": 2048 * 1024,
+        "RLIMIT_DATA": 1024 * 1024,
+    }
+
+    # No /proc (macOS, Windows): no baseline, not a crash.
+    assert _current_usage(str(tmp_path / "missing")) == {}
+
+
+def test_a_memory_error_an_engine_wrapped_is_reported_as_memory():
+    """
+    The engines catch broadly and re-raise as ValueError.
+
+    str(MemoryError()) is empty, so this reached the student as
+    "Could not solve dy/dx = Q/P:" under "That input could not be
+    solved" — blaming a valid input for the server's own limit.
+    """
+
+    from backend.compute import ComputationTooLarge, run_guarded
+
+    def engine_that_wraps():
+        try:
+            raise MemoryError()
+        except Exception as error:
+            raise ValueError(f"Could not solve dy/dx = Q/P: {error}")
+
+    with pytest.raises(ComputationTooLarge):
+        run_guarded(engine_that_wraps)
+
+
+def test_the_screenshot_failure_now_reads_as_a_memory_limit():
+    """End to end, through the real Lagrange route and its engine."""
+
+    from unittest import mock
+
+    # Patched before the fork, so the child inherits it.
+    with mock.patch("sympy.dsolve", side_effect=MemoryError()):
+        response = client.post(
+            "/api/pde/lagrange", json={"P": "y*z", "Q": "x*z", "R": "x*y"}
+        )
+
+    assert response.status_code == 503
+    assert error_of(response)["code"] == "computation_too_expensive"
+    assert "memory" in error_of(response)["message"]
+
+
+def test_the_lagrange_example_solves_under_the_guard():
+    """The input from the report, with no fault injected."""
+
+    response = client.post(
+        "/api/pde/lagrange", json={"P": "y*z", "Q": "x*z", "R": "x*y"}
+    )
+
+    assert response.status_code == 200, response.text
+
+    result = response.json()["result"]
+    assert result["u"]["text"] == "-x**2 + y**2"
+    assert result["v"]["text"] == "-x**2 + z**2"
+
+
 def test_the_guard_returns_results_and_re_raises_engine_errors():
     """Isolation must be transparent to everything that already worked."""
 

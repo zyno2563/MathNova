@@ -15,9 +15,9 @@ services:
     envVars:
       - key: PYTHON_VERSION
         value: "3.12.6"
-      # The per-calculation memory cap has to sit below the instance's
-      # total, or the container is OOM-killed before the cap can stop
-      # the calculation. A warm worker measures ~65 MB.
+      # Memory each calculation may use on top of what the worker already
+      # holds (~65 MB warm). Worker + allowance must fit the instance's
+      # 512 MB, or the container is OOM-killed before the cap can act.
       - key: MATHNOVA_COMPUTE_MEMORY_MB
         value: "256"
       # Optional — set the value in the Render dashboard, not here.

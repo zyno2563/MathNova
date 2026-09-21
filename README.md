@@ -235,7 +235,7 @@ All optional. See `.env.example`.
 | `MATHNOVA_ASSISTANT_MAX_TOKENS` | `16000` | Reply ceiling |
 | `MATHNOVA_ASSISTANT_MAX_TOOL_TURNS` | `8` | Bounds the agentic loop |
 | `MATHNOVA_COMPUTE_TIMEOUT` | `30` | Per-calculation deadline, seconds |
-| `MATHNOVA_COMPUTE_MEMORY_MB` | `1024` | Per-calculation memory cap |
+| `MATHNOVA_COMPUTE_MEMORY_MB` | `1024` | Memory a calculation may use beyond the worker's own |
 | `MATHNOVA_MAX_REQUEST_BYTES` | `131072` | Largest accepted request body |
 | `MATHNOVA_ASSISTANT_TIMEOUT` | `45` | Provider request timeout, seconds |
 | `MATHNOVA_CORS_ORIGINS` | same-origin | Comma-separated extra origins |

@@ -80,6 +80,38 @@ class ResultNotTransferable(Exception):
     """
 
 
+#: /proc/self/status fields holding what each limit already counts.
+_USAGE_FIELDS = {"RLIMIT_AS": "VmSize", "RLIMIT_DATA": "VmData"}
+
+
+def _current_usage(path="/proc/self/status"):
+    """
+    What the process already occupies, per limit, in bytes.
+
+    Linux only; elsewhere this returns {} and the cap falls back to an
+    absolute value. (macOS refuses both limits outright, so there the
+    deadline is the only guard.)
+    """
+
+    try:
+        with open(path) as handle:
+            fields = dict(
+                line.split(":", 1) for line in handle if ":" in line
+            )
+    except OSError:
+        return {}
+
+    usage = {}
+
+    for limit, field in _USAGE_FIELDS.items():
+        value = fields.get(field, "").split()
+
+        if len(value) == 2 and value[1] == "kB" and value[0].isdigit():
+            usage[limit] = int(value[0]) * 1024
+
+    return usage
+
+
 def _apply_child_limits():
     """
     Cap the child's own resources.
@@ -87,6 +119,13 @@ def _apply_child_limits():
     The deadline alone is not enough: a memory bomb can drive the host
     into swap long before it expires, which degrades every other request.
     An address-space cap turns that into a prompt MemoryError instead.
+
+    The cap is an allowance on top of what the child inherited, not an
+    absolute ceiling. RLIMIT_AS counts every mapping — the interpreter,
+    SymPy, NumPy and OpenBLAS's per-thread buffers — and on Linux that
+    baseline alone runs to hundreds of megabytes. An absolute 256 MB cap
+    left the child over budget before it started, so every calculation
+    that allocated anything failed with MemoryError.
     """
 
     try:
@@ -94,7 +133,8 @@ def _apply_child_limits():
     except ImportError:  # pragma: no cover - POSIX only
         return
 
-    limit = settings.COMPUTE_MEMORY_MB * 1024 * 1024
+    allowance = settings.COMPUTE_MEMORY_MB * 1024 * 1024
+    usage = _current_usage()
 
     for name in ("RLIMIT_AS", "RLIMIT_DATA"):
         constant = getattr(resource, name, None)
@@ -102,14 +142,40 @@ def _apply_child_limits():
         if constant is None:
             continue
 
+        ceiling = usage.get(name, 0) + allowance
+
         try:
             soft, hard = resource.getrlimit(constant)
-            ceiling = limit if hard in (resource.RLIM_INFINITY,) else min(limit, hard)
+
+            if hard != resource.RLIM_INFINITY:
+                ceiling = min(ceiling, hard)
+
             resource.setrlimit(constant, (ceiling, hard))
         except (ValueError, OSError):  # pragma: no cover - platform dependent
             # A limit we cannot lower is not a reason to fail the request;
             # the deadline still applies.
             pass
+
+
+def _caused_by_memory(error):
+    """
+    Whether running out of memory is anywhere in the exception chain.
+
+    Engines catch broadly and re-raise as ValueError with the original
+    message appended — and str(MemoryError()) is empty, so the client saw
+    "Could not solve dy/dx = Q/P:" and was told the input was bad.
+    """
+
+    seen = set()
+
+    while error is not None and id(error) not in seen:
+        if isinstance(error, MemoryError):
+            return True
+
+        seen.add(id(error))
+        error = error.__cause__ or error.__context__
+
+    return False
 
 
 def _child(pipe, function, args, kwargs):
@@ -123,7 +189,9 @@ def _child(pipe, function, args, kwargs):
     try:
         payload = ("ok", function(*args, **kwargs))
     except BaseException as error:  # noqa: BLE001 - relayed, not swallowed
-        payload = ("error", error)
+        # Surface a wrapped MemoryError as what it is, so the parent
+        # reports "needed too much memory" rather than "bad input".
+        payload = ("error", MemoryError() if _caused_by_memory(error) else error)
 
     try:
         pipe.send_bytes(pickle.dumps(payload))
