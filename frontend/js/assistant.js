@@ -99,6 +99,10 @@ export function renderRich(source) {
 
     if (/^<(h4|pre|ul|ol)/.test(block.trim())) return block;
 
+    // Models separate sections with a markdown rule; without this it
+    // renders as a literal line of dashes in the middle of an answer.
+    if (/^-{3,}$/.test(block.trim())) return '<hr class="rule">';
+
     return `<p>${lines.join('<br>')}</p>`;
   });
 

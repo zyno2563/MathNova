@@ -813,6 +813,19 @@ tbody tr:hover { background: var(--surface-2); }
   overflow-x: auto;
   scrollbar-width: thin;
 }
+/* A displayed equation can be wider than a phone. Let it scroll on its
+   own, so the bubble's text still wraps normally and nothing is lost
+   off the right edge with no way to reach it. */
+.msg .bubble .katex-display {
+  overflow-x: auto; overflow-y: hidden;
+  padding-bottom: 4px; margin: 10px 0;
+}
+
+.msg .bubble hr.rule {
+  border: 0; border-top: 1px solid var(--border);
+  margin: 14px 0;
+}
+
 .msg .bubble p:first-child { margin-top: 0; }
 .msg .bubble p:last-child  { margin-bottom: 0; }
 .msg .bubble h4 { font-size: 13.5px; margin: 14px 0 6px; color: var(--text); }

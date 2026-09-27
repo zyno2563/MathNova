@@ -250,3 +250,35 @@ def test_the_app_passes_label_overrides_to_the_renderer():
     assert "renderGeneric(result, method.labels)" in source, (
         "app.js calls renderGeneric without the method's label overrides"
     )
+
+
+def test_a_markdown_rule_is_not_rendered_as_dashes():
+    """
+    Models separate sections with `---`.
+
+    Rendered literally it looks like a glitch mid-answer, which is how
+    it appeared in the Android app.
+    """
+
+    source = read("js", "assistant.js")
+
+    assert "/^-{3,}$/" in source, "a line of dashes must become a divider"
+    assert "<hr" in source
+
+
+def test_wide_equations_can_be_reached_on_a_phone():
+    """
+    A displayed equation is often wider than a phone screen.
+
+    Without its own scroll it is clipped at the bubble's edge with no
+    way to see the rest.
+    """
+
+    css = read("css", "styles.css")
+
+    block = re.search(
+        r"\.msg \.bubble \.katex-display \{[^}]*\}", css
+    )
+
+    assert block, "chat bubbles do not give displayed equations a scroll"
+    assert "overflow-x: auto" in block.group(0)
