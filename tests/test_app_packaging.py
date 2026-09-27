@@ -207,3 +207,37 @@ def test_the_csp_permits_the_manifest_and_the_worker():
         )
 
     assert "script-src 'self'" in CONTENT_SECURITY_POLICY
+
+
+# =========================================================
+# Android app verification (Digital Asset Links)
+# =========================================================
+
+def test_the_android_verification_file_is_served():
+    """
+    Android checks this file to trust the app with the domain.
+
+    Without it the installed app opens inside a visible browser address
+    bar — which looks unfinished and can fail Play review.
+    """
+
+    response = client.get("/.well-known/assetlinks.json")
+
+    assert response.status_code == 200, "assetlinks.json is not reachable"
+    assert "json" in response.headers["content-type"]
+
+    statements = response.json()
+
+    assert isinstance(statements, list) and statements
+
+    target = statements[0]["target"]
+
+    assert statements[0]["relation"] == ["delegate_permission/common.handle_all_urls"]
+    assert target["namespace"] == "android_app"
+    assert target["package_name"] == "com.mathnova.app"
+
+    for fingerprint in target["sha256_cert_fingerprints"]:
+        # 32 colon-separated hex pairs, upper case, as keytool prints them.
+        assert re.fullmatch(r"(?:[0-9A-F]{2}:){31}[0-9A-F]{2}", fingerprint), (
+            f"malformed fingerprint: {fingerprint}"
+        )
