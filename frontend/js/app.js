@@ -6,10 +6,11 @@
  */
 
 import { ApiError, get, post } from './api.js';
-import { MODULES, forcingVisibility, renderGeneric } from './modules.js';
+import { MODULES, forcingVisibility, renderGeneric, renderSteps } from './modules.js';
+import { walkthroughFor } from './walkthrough.js';
 import { mountShell } from './shell.js';
 import { onChange } from './theme.js';
-import { alert, clear, el, empty, renderLatex } from './ui.js';
+import { alert, card, clear, el, empty, renderLatex } from './ui.js';
 
 const state = {
   module: MODULES[0],
@@ -18,6 +19,9 @@ const state = {
 };
 
 const dom = {};
+
+// Which example each method is showing, so the button can move on.
+const exampleIndex = new Map();
 
 /* ==========================================================
    Navigation
@@ -113,6 +117,51 @@ function driverField(method) {
   const names = (method.fields || []).map((field) => field.name);
 
   return candidates.find((name) => names.includes(name));
+}
+
+/**
+ * Load the next worked example for this method.
+ *
+ * The form opens on the first example already, so loading "the
+ * example" once looked identical to pressing Compute. Each press now
+ * moves to the next one and says which it is.
+ */
+function loadExample() {
+  const walkthrough = walkthroughFor(state.module.id, state.method.id);
+  const examples = (walkthrough && walkthrough.examples) || [];
+
+  if (!examples.length) {
+    // No curated set: fall back to restoring the method's defaults.
+    state.values = defaultValues(state.method);
+    renderForm();
+    run();
+    return;
+  }
+
+  const key = `${state.module.id}:${state.method.id}`;
+
+  // Start at the second one: the first is what the form already shows.
+  const next = exampleIndex.has(key)
+    ? (exampleIndex.get(key) + 1) % examples.length
+    : 1 % examples.length;
+
+  exampleIndex.set(key, next);
+
+  const example = examples[next];
+
+  state.values = { ...defaultValues(state.method), ...example.values };
+
+  renderForm();
+  announceExample(example, next + 1, examples.length);
+  run();
+}
+
+function announceExample(example, position, total) {
+  if (!dom.exampleNote) return;
+
+  dom.exampleNote.textContent =
+    `Example ${position} of ${total} — ${example.label}`;
+  dom.exampleNote.hidden = false;
 }
 
 function defaultValues(method) {
@@ -291,9 +340,25 @@ async function run({ silent = false } = {}) {
 
     clear(dom.results);
 
-    const rendered = typeof method.render === 'function'
-      ? method.render(result)
-      : renderGeneric(result, method.labels);
+    const walkthrough = walkthroughFor(state.module.id, method.id);
+    const steps = walkthrough && walkthrough.steps;
+
+    let rendered;
+
+    if (typeof method.render === 'function') {
+      // The method draws its own result (a chart, its own tables), so
+      // the worked solution goes in front of it rather than inside.
+      const own = [].concat(method.render(result));
+      const walked = steps
+        ? renderSteps(result, steps, method.labels, { explainOnly: true })
+        : null;
+
+      rendered = walked && walked.card
+        ? [card('How this is solved', [walked.card]), ...own]
+        : own;
+    } else {
+      rendered = renderGeneric(result, method.labels, steps);
+    }
 
     for (const node of [].concat(rendered)) {
       if (node) dom.results.append(node);
@@ -333,6 +398,7 @@ function cacheDom() {
   dom.spinner = document.getElementById('spinner');
   dom.submit = document.getElementById('submit-button');
   dom.example = document.getElementById('example-button');
+  dom.exampleNote = document.getElementById('example-note');
   dom.sidebar = document.getElementById('sidebar');
 }
 
@@ -365,11 +431,7 @@ function boot() {
     run();
   });
 
-  dom.example.addEventListener('click', () => {
-    state.values = defaultValues(state.method);
-    renderForm();
-    run();
-  });
+  dom.example.addEventListener('click', loadExample);
 
   window.addEventListener('hashchange', () => {
     const module = MODULES.find(

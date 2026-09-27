@@ -247,7 +247,7 @@ def test_the_app_passes_label_overrides_to_the_renderer():
 
     source = read("js", "app.js")
 
-    assert "renderGeneric(result, method.labels)" in source, (
+    assert "renderGeneric(result, method.labels, steps)" in source, (
         "app.js calls renderGeneric without the method's label overrides"
     )
 

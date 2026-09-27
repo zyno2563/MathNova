@@ -85,6 +85,30 @@ const HIDDEN_KEYS = new Set([
 ]);
 
 function verificationSection(result) {
+  const nested = result.verification;
+
+  // The complete solution reports three separate checks rather than one
+  // flag: the CF against the homogeneous equation, the PI against the
+  // forcing term, and their sum against the whole equation.
+  if (nested && typeof nested === 'object') {
+    const checks = [
+      ['cf', '✓ CF satisfies F(D)y = 0', '⚠ CF unverified'],
+      ['pi', '✓ PI satisfies F(D)y = X', '⚠ PI unverified'],
+      ['complete', '✓ Complete solution verified', '⚠ Complete solution unverified']
+    ];
+
+    const parts = checks
+      .filter(([key]) => nested[key])
+      .map(([key, good, warn]) =>
+        verificationBadge(nested[key].verified, { good, warn }));
+
+    if (parts.length) {
+      return el('div', { class: 'result-row' }, [
+        el('div', { style: 'display:flex;flex-wrap:wrap;gap:8px' }, parts)
+      ]);
+    }
+  }
+
   if (!('verified' in result)) return null;
 
   const badges = [verificationBadge(result.verified)];
@@ -116,7 +140,122 @@ function verificationSection(result) {
  * f(t) and F(s), Fourier writes f(x) and F(ω). Without an override a
  * Fourier result was captioned in Laplace notation.
  */
-export function renderGeneric(result, labels = null) {
+/**
+ * Show one value inside a step, whatever shape it is.
+ *
+ * The engines return equations, plain numbers and tables side by side,
+ * and a worked solution has to read as a solution in every case.
+ */
+function stepValue(key, value, caption) {
+  if (isMath(value)) return mathRow(caption, value);
+
+  // The verification block is a set of checks; the residual is the part
+  // worth showing — it is what "substitute it back" actually produced.
+  if (key === 'verification' && value && isMath(value.complete?.difference)) {
+    return mathRow('Residual (must be zero)', value.complete.difference);
+  }
+
+  if (Array.isArray(value) && value.length && typeof value[0] === 'object') {
+    if (key === 'iterations') return iterationTable(value);
+
+    // Roots carry a multiplicity and the root itself is an equation,
+    // so a plain table cell would print "[object Object]".
+    if (isMath(value[0].root)) {
+      return el('div', { class: 'step-list' }, value.map((entry) => mathRow(
+        entry.multiplicity > 1
+          ? `Root (multiplicity ${entry.multiplicity})`
+          : 'Root',
+        entry.root
+      )));
+    }
+
+    const columns = Object.keys(value[0]).map((name) => ({
+      key: name, label: prettify(name)
+    }));
+
+    // A cell may itself be an equation; tables show text, not LaTeX.
+    const rows = value.map((row) => {
+      const flat = {};
+      for (const [name, cell] of Object.entries(row)) {
+        flat[name] = isMath(cell) ? cell.text : cell;
+      }
+      return flat;
+    });
+
+    return table(columns, rows);
+  }
+
+  if (Array.isArray(value)) {
+    if (!value.length) return null;
+
+    if (isMath(value[0])) {
+      return el('div', { class: 'step-list' },
+        value.map((item) => mathRow('', item)));
+    }
+
+    return stats([[caption, value.map((v) => formatNumber(v)).join(',  ')]]);
+  }
+
+  if (value === null || value === undefined || typeof value === 'object') {
+    return null;
+  }
+
+  if (typeof value === 'boolean') return stats([[caption, value ? 'yes' : 'no']]);
+
+  return stats([[caption, formatNumber(value)]]);
+}
+
+/** The display label for a result key, falling back to a tidy name. */
+function labelFor(key) {
+  for (const [name, label] of MATH_LABELS) if (name === key) return label;
+  for (const [name, label] of STAT_LABELS) if (name === key) return label;
+  return prettify(key);
+}
+
+/**
+ * Lay a result out as a numbered worked solution.
+ *
+ * Every value shown is one the engine returned; the prose only says
+ * what the step is for. Steps whose fields are missing are dropped,
+ * which is how one list covers a method that changes shape with its
+ * options. `explainOnly` leaves the values to a method that draws its
+ * own detailed result, so nothing appears twice.
+ */
+export function renderSteps(result, steps, labels = null, options = {}) {
+  const caption = (key, fallback) => (labels && labels[key]) || fallback;
+  const explainOnly = options.explainOnly === true;
+  const used = new Set();
+  const items = [];
+
+  for (const step of steps) {
+    const parts = [];
+
+    if (!explainOnly) {
+      for (const key of step.keys || []) {
+        const node = stepValue(key, result[key], caption(key, labelFor(key)));
+
+        if (node) {
+          parts.push(node);
+          used.add(key);
+        }
+      }
+    }
+
+    // A step whose fields the engine did not return is dropped; one
+    // that never had fields (like forming subsidiary equations) stays.
+    if (!explainOnly && !parts.length && (step.keys || []).length) continue;
+
+    items.push(el('li', { class: 'step' }, [
+      el('h4', { class: 'step-title', text: step.title }),
+      step.explain ? el('p', { class: 'step-explain', text: step.explain }) : null,
+      ...parts
+    ]));
+  }
+
+  return { card: items.length ? el('ol', { class: 'steps' }, items) : null, used };
+}
+
+export function renderGeneric(result, labels = null, steps = null) {
   const nodes = [];
   const shown = new Set(HIDDEN_KEYS);
 
@@ -126,7 +265,20 @@ export function renderGeneric(result, labels = null) {
   const verification = verificationSection(result);
   if (verification) nodes.push(verification);
 
+  if (steps) {
+    // The worked solution replaces the flat list of equations, so the
+    // same result is never printed twice on one page.
+    const walked = renderSteps(result, steps, labels);
+
+    if (walked.card) {
+      nodes.push(walked.card);
+      walked.used.forEach((key) => shown.add(key));
+    }
+  }
+
   for (const [key, label] of MATH_LABELS) {
+    if (shown.has(key)) continue;
+
     if (isMath(result[key])) {
       nodes.push(mathRow(caption(key, label), result[key]));
       shown.add(key);
@@ -136,6 +288,8 @@ export function renderGeneric(result, labels = null) {
   const tiles = [];
 
   for (const [key, label] of STAT_LABELS) {
+    if (shown.has(key)) continue;
+
     const value = result[key];
     if (value === null || value === undefined) continue;
     if (isMath(value)) continue;
@@ -156,7 +310,8 @@ export function renderGeneric(result, labels = null) {
     }
   }
 
-  if (Array.isArray(result.iterations) && result.iterations.length) {
+  if (!shown.has('iterations')
+      && Array.isArray(result.iterations) && result.iterations.length) {
     nodes.push(iterationTable(result.iterations));
   }
 
@@ -379,11 +534,6 @@ export const MODULES = [
         fields: [expr('coefficients', 'Operator coefficients', '1, -3, 2',
           'Descending powers of D. D² − 3D + 2 → 1, -3, 2', true)],
         build: (values) => ({ coefficients: splitList(values.coefficients) }),
-        render: (result) => card('Result', [
-          mathRow('Auxiliary equation', result.auxiliary_equation),
-          rootsBlock(result.roots),
-          mathRow('Complementary function', result.complementary_function)
-        ])
       },
       {
         id: 'pi',
@@ -412,29 +562,6 @@ export const MODULES = [
           coefficients: splitList(values.coefficients),
           forcing: buildForcing(values)
         }),
-        render(result) {
-          const verification = result.verification || {};
-
-          return [
-            card('Solution', [
-              mathRow('Auxiliary equation', result.auxiliary_equation),
-              rootsBlock(result.roots),
-              mathRow('Complementary function  y_c', result.complementary_function),
-              mathRow('Particular integral  y_p', result.particular_integral),
-              mathRow('Complete solution  y', result.complete_solution)
-            ]),
-            card('Verification', [
-              el('div', { style: 'display:flex;flex-wrap:wrap;gap:8px' }, [
-                verificationBadge(verification.cf && verification.cf.verified,
-                  { good: '✓ CF satisfies F(D)y = 0', warn: '⚠ CF unverified' }),
-                verificationBadge(verification.pi && verification.pi.verified,
-                  { good: '✓ PI satisfies F(D)y = X', warn: '⚠ PI unverified' }),
-                verificationBadge(verification.complete && verification.complete.verified,
-                  { good: '✓ Complete solution verified', warn: '⚠ Complete solution unverified' })
-              ])
-            ])
-          ];
-        }
       },
       {
         id: 'first-order',
