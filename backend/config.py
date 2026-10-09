@@ -44,6 +44,15 @@ class Settings:
     COMPUTE_TIMEOUT = float(os.getenv("MATHNOVA_COMPUTE_TIMEOUT", "30"))
     COMPUTE_MEMORY_MB = int(os.getenv("MATHNOVA_COMPUTE_MEMORY_MB", "1024"))
 
+    ADMISSION_ENABLED = _flag("MATHNOVA_ADMISSION_ENABLED", "1")
+    MAX_ACTIVE_REQUESTS = max(1, int(os.getenv("MATHNOVA_MAX_ACTIVE_REQUESTS", "1")))
+    MAX_QUEUED_REQUESTS = max(0, int(os.getenv("MATHNOVA_MAX_QUEUED_REQUESTS", "2")))
+    QUEUE_WAIT_SECONDS = float(os.getenv("MATHNOVA_QUEUE_WAIT_SECONDS", "5"))
+    REQUEST_TIMEOUT = float(os.getenv("MATHNOVA_REQUEST_TIMEOUT", "90"))
+    REQUESTS_PER_MINUTE = max(1, int(os.getenv("MATHNOVA_REQUESTS_PER_MINUTE", "30")))
+    AI_REQUESTS_PER_MINUTE = max(1, int(os.getenv("MATHNOVA_AI_REQUESTS_PER_MINUTE", "5")))
+    AI_GLOBAL_REQUESTS_PER_MINUTE = max(1, int(os.getenv("MATHNOVA_AI_GLOBAL_REQUESTS_PER_MINUTE", "10")))
+
     # How long the assistant may wait on its provider. Kept well under a
     # typical proxy's 60s so the client sees our error, not a gateway's.
     ASSISTANT_TIMEOUT = float(os.getenv("MATHNOVA_ASSISTANT_TIMEOUT", "45"))

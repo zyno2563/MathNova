@@ -32,7 +32,7 @@ const context = vm.createContext({
   empty: text => el('p', { text }), alert: (kind, title, detail) => el('p', { text: detail }), renderLatex: () => {},
   document: { readyState: 'loading', addEventListener: () => {}, getElementById: id => { if (!elements.has(id)) elements.set(id, new Node()); return elements.get(id); } },
   location: { hash: '', href: 'http://localhost/solver/' },
-  window: { addEventListener: () => {} }, URL, console
+  window: { addEventListener: () => {} }, URL, console, AbortController, setTimeout, clearTimeout
 });
 // Stub imported collaborators while exercising the actual solver page state and events.
 const source = fs.readFileSync(new URL('../frontend/js/app.js', import.meta.url), 'utf8').replace(/^import .*;\n/gm, '');

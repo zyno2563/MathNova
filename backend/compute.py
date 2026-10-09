@@ -28,8 +28,10 @@ import multiprocessing
 import os
 import pickle
 import signal
+import time
 
 from backend.config import settings
+from backend.request_budget import check_budget
 
 logger = logging.getLogger("mathnova.compute")
 
@@ -192,6 +194,11 @@ def _child(pipe, function, args, kwargs):
         # Surface a wrapped MemoryError as what it is, so the parent
         # reports "needed too much memory" rather than "bad input".
         payload = ("error", MemoryError() if _caused_by_memory(error) else error)
+        # HTTP engine errors have keyword-sensitive constructors and cannot
+        # reliably round-trip as exception instances (notably assistant errors).
+        from backend.errors import EngineError
+        if isinstance(error, EngineError):
+            payload = ("engine_error", error.status_code, error.code, error.message)
 
     try:
         pipe.send_bytes(pickle.dumps(payload))
@@ -218,6 +225,9 @@ def _child(pipe, function, args, kwargs):
 def _reraise(payload):
     """Turn a relayed outcome back into a value or an exception."""
 
+    if payload[0] == "engine_error":
+        from backend.errors import EngineError
+        raise EngineError(payload[1], payload[2], payload[3])
     if payload[0] == "ok":
         return payload[1]
 
@@ -232,7 +242,7 @@ def _reraise(payload):
     raise _RECOVERABLE.get(name, ValueError)(message)
 
 
-def run_guarded(function, *args, timeout=None, **kwargs):
+def run_guarded(function, *args, timeout=None, start_method=None, **kwargs):
     """
     Call `function` under a wall-clock deadline and a memory cap.
 
@@ -243,14 +253,19 @@ def run_guarded(function, *args, timeout=None, **kwargs):
     """
 
     timeout = timeout or settings.COMPUTE_TIMEOUT
+    remaining = check_budget()
+    if remaining is not None:
+        timeout = min(timeout, remaining)
+    deadline = time.monotonic() + timeout
 
-    if not _FORK_AVAILABLE:
+    context = multiprocessing.get_context(start_method) if start_method else _CONTEXT
+    if context is None:
         # No isolation available. Documented in the module docstring;
         # the request models still bound the input.
         return function(*args, **kwargs)
 
-    receiver, sender = _CONTEXT.Pipe(duplex=False)
-    process = _CONTEXT.Process(
+    receiver, sender = context.Pipe(duplex=False)
+    process = context.Process(
         target=_child, args=(sender, function, args, kwargs), daemon=True
     )
     process.start()
@@ -261,13 +276,14 @@ def run_guarded(function, *args, timeout=None, **kwargs):
     sender.close()
 
     try:
-        ready = receiver.poll(timeout)
-
-        if not ready:
-            logger.warning(
-                "Calculation exceeded %ss; terminating worker", timeout
-            )
-            raise ComputationTimeout(timeout)
+        while True:
+            check_budget()
+            remaining = deadline - time.monotonic()
+            if remaining <= 0:
+                raise ComputationTimeout(timeout)
+            if receiver.poll(min(0.05, remaining)):
+                break
+        check_budget()
 
         try:
             payload = pickle.loads(receiver.recv_bytes())

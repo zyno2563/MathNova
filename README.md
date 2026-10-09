@@ -235,6 +235,33 @@ enabled. Check the deployment status and verify the public homepage and
 solver after the build completes. API keys belong in Render's environment
 settings; they must never be committed.
 
+### Traffic, cancellation and startup
+
+The default deployment runs one web worker, admits one calculation or AI
+chat at a time, and queues at most two more for up to five seconds. Busy
+responses return `503`; request limits return `429`, both with `Retry-After`.
+Per visitor, the defaults are 30 math requests and 5 AI requests per minute,
+with a global cap of 10 AI requests per minute. Health and static pages
+bypass these calculation limits. These limits are in memory, per process,
+and reset on restart; multiple replicas need a shared limiter.
+
+Client identity uses the ASGI peer address, not untrusted request headers.
+Configure Uvicorn's trusted proxy allowlist for the actual proxy when
+needed; otherwise visitors behind the same proxy share a limit.
+
+One 90-second request budget includes queue time and all calculation steps.
+Each math step also retains its 30-second cap. Disconnecting or using Cancel
+stops the active calculation child once the server receives the disconnect.
+AI chats run in a fresh, disposable process so provider calls and tool loops
+can also be stopped. Cancellation cannot undo a provider request already
+sent, and a buffering reverse proxy may delay disconnect notification.
+
+On repeat visits, the service worker falls back to a cached public page
+after two seconds and refreshes it in the background. It never caches API
+results, query-string inputs, or Render's temporary startup screen. This
+does not eliminate the first-ever visit's hosting startup delay. Solver
+requests show a delayed waiting message and a Cancel control.
+
 ### Accepted expressions
 
 Inputs support explicit arithmetic (`+`, `-`, `*`, `/`, `^` or `**`),

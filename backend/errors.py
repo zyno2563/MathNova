@@ -16,6 +16,7 @@ import os
 import re
 
 import sympy as sp
+from backend.request_budget import RequestStopped, check_budget
 from fastapi import HTTPException
 
 from backend.compute import (
@@ -91,7 +92,10 @@ def sanitize(message):
 def _direct(function, *args, **kwargs):
     """Run in the current process, without isolation."""
 
-    return function(*args, **kwargs)
+    check_budget()
+    result = function(*args, **kwargs)
+    check_budget()
+    return result
 
 
 class EngineError(HTTPException):
@@ -159,6 +163,14 @@ def solve(operation, function, *args, isolated=True, **kwargs):
 
     except EngineError:
         raise
+
+    except RequestStopped as error:
+        raise EngineError(
+            499 if error.cancelled else 503,
+            "request_cancelled" if error.cancelled else "request_timeout",
+            "The request was cancelled." if error.cancelled else
+            "This request took too long and was stopped. Try a simpler problem."
+        )
 
     except ComputationTimeout as error:
         logger.warning("%s exceeded the %ss deadline", operation, error)

@@ -165,15 +165,13 @@ def test_the_service_worker_never_caches_a_calculation():
     )
 
 
-def test_the_service_worker_is_network_first():
-    """Cache-first would hide every deploy behind a stale copy."""
+def test_the_service_worker_revalidates_and_does_not_cache_host_loading_pages():
 
     source = open(os.path.join(FRONTEND, "sw.js"), encoding="utf-8").read()
 
     assert "networkFirst" in source
-    assert "caches.match(request)" in source.split("catch")[1], (
-        "the cache must only be consulted after the network fails"
-    )
+    assert "event.waitUntil(fresh" in source
+    assert "X-MathNova-App" in source
 
 
 def test_everything_the_worker_precaches_exists():

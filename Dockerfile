@@ -28,8 +28,8 @@ EXPOSE 8000
 HEALTHCHECK --interval=30s --timeout=5s --start-period=20s --retries=3 \
     CMD python -c "import urllib.request,sys; sys.exit(0 if urllib.request.urlopen('http://127.0.0.1:8000/api/health', timeout=4).status == 200 else 1)"
 
-# A symbolic request can be CPU-heavy, so favour a few workers over
-# many threads. Override WEB_CONCURRENCY for the host you deploy to.
-ENV WEB_CONCURRENCY=2
+# Admission limits are shared within one application process.
+# Multiple workers require a shared limiter and a larger memory budget.
+ENV WEB_CONCURRENCY=1
 
-CMD ["sh", "-c", "uvicorn backend.main:app --host 0.0.0.0 --port ${PORT:-8000} --workers ${WEB_CONCURRENCY:-2}"]
+CMD ["sh", "-c", "uvicorn backend.main:app --host 0.0.0.0 --port ${PORT:-8000} --workers ${WEB_CONCURRENCY:-1}"]

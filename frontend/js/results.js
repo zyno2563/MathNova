@@ -89,5 +89,6 @@ export function renderSolved(result, module, method, steps) {
     worked = renderSteps(result, steps, method.labels)?.card;
   }
   return [...answers, verificationReport(result, module.id, method.id),
-    ...(worked ? [disclosure('Worked steps for this problem', [worked])] : []), ...extras];
+    ...(worked ? [disclosure(result.worked_steps?.length || result.worked_steps_error
+      ? 'Worked steps for this problem' : 'Method overview', [worked])] : []), ...extras];
 }

@@ -30,6 +30,7 @@ CONTENT_SECURITY_POLICY = "; ".join([
 ])
 
 HEADERS = {
+    "X-MathNova-App": "1",
     "Content-Security-Policy": CONTENT_SECURITY_POLICY,
     # Stop a browser from second-guessing a declared content type, which
     # is how a JSON response gets treated as HTML and executed.

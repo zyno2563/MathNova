@@ -6,6 +6,8 @@ from fastapi import APIRouter
 from pydantic import BaseModel, Field
 
 from backend.assistant.service import chat, status as assistant_status
+from backend.errors import solve
+from backend.config import settings
 from backend.limits import MAX_HISTORY_TURNS
 
 router = APIRouter(prefix="/assistant", tags=["assistant"])
@@ -46,7 +48,10 @@ def status():
 
 @router.post("/chat", summary="Ask the AI Mathematics Assistant")
 def assistant_chat(request: ChatRequest):
-    result = chat(
+    result = solve(
+        # A fresh interpreter avoids inherited SDK/network locks and macOS
+        # proxy-discovery crashes from forking a threaded HTTP worker.
+        "Answering your question", chat, timeout=settings.REQUEST_TIMEOUT, start_method="spawn",
         message=request.message,
         history=[entry.model_dump() for entry in (request.history or [])],
         module_context=request.module

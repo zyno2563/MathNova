@@ -11,6 +11,7 @@ from fastapi.staticfiles import StaticFiles
 from starlette.exceptions import HTTPException as StarletteHTTPException
 
 from backend.config import settings
+from backend.admission import AdmissionMiddleware
 from backend.errors import EngineError, sanitize
 from backend.limits import BodySizeLimitMiddleware
 from backend.security_headers import SecurityHeadersMiddleware
@@ -49,11 +50,12 @@ def create_app():
         openapi_url="/api/openapi.json"
     )
 
-    # Outermost, so even an error response carries the headers.
-    app.add_middleware(SecurityHeadersMiddleware)
-
+    app.add_middleware(AdmissionMiddleware)
     # Refuse oversized bodies before anything reads them.
     app.add_middleware(BodySizeLimitMiddleware)
+
+    # Added last of these wrappers so queue/body errors carry headers too.
+    app.add_middleware(SecurityHeadersMiddleware)
 
     origins = settings.cors_origins
 

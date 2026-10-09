@@ -53,9 +53,11 @@
       <div class="form-actions">
         <button type="submit" form="method-form" class="button primary" id="submit-button">Compute</button>
         <button type="button" class="button ghost" id="example-button">Load example</button>
+        <button type="button" class="button ghost" id="cancel-button" hidden>Cancel calculation</button>
         <span class="spinner" id="spinner" hidden aria-hidden="true"></span>
       </div>
       <p class="example-note" id="example-note" hidden aria-live="polite"></p>
+      <p class="hint" id="request-status" hidden role="status" aria-live="polite"></p>
     </section>
 
     <section id="results" class="results" aria-live="polite"></section>

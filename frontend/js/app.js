@@ -19,6 +19,7 @@ const state = {
   method: MODULES[0].methods[0],
   requestId: 0,
   savedResult: null,
+  controller: null,
   values: {}
 };
 
@@ -179,11 +180,15 @@ function defaultValues(method) {
 }
 
 function renderModule() {
+  state.controller?.abort();
+  state.controller = null;
   state.requestId++;
   state.savedResult = null;
   dom.inputNotice = null;
   dom.spinner.hidden = true;
   dom.submit.disabled = false;
+  dom.cancel.hidden = true;
+  dom.requestStatus.hidden = true;
   dom.modulePicker.value = state.module.id;
   dom.title.textContent = state.module.name;
   dom.blurb.textContent = state.module.blurb;
@@ -324,6 +329,7 @@ function requestBody() {
  * expression sends a student editing maths that was already correct.
  */
 function headlineFor(code) {
+  if (code === 'server_busy' || code === 'rate_limited') return 'Please try again shortly';
   if (code === 'request_timeout') return 'The server took too long';
   if (code === 'request_cancelled') return 'Calculation cancelled';
   if (code === 'network_error' || code === 'bad_response') {
@@ -391,12 +397,22 @@ function renderSavedResult({ preserveDisclosures = false } = {}) {
 }
 
 async function run() {
+  state.controller?.abort();
+  const controller = new AbortController();
+  state.controller = controller;
   const method = state.method;
   const module = state.module;
   const requestId = ++state.requestId;
 
   dom.spinner.hidden = false;
   dom.submit.disabled = true;
+  dom.cancel.hidden = false;
+  dom.requestStatus.hidden = false;
+  dom.requestStatus.textContent = 'Calculating…';
+  const slowMessage = setTimeout(() => {
+    if (requestId !== state.requestId) return;
+    dom.requestStatus.textContent = 'The server may be waking up, or this calculation may need more time. You can wait or cancel.';
+  }, 8000);
 
   try {
     const input = requestBody();
@@ -407,7 +423,7 @@ async function run() {
           ?? state.values[field.name])
         : String(state.values[field.name] ?? '')
     }));
-    const result = await post(method.endpoint, input);
+    const result = await post(method.endpoint, input, { signal: controller.signal });
 
     if (requestId !== state.requestId || method !== state.method) return;
     state.savedResult = { result, module, method, input, fields };
@@ -427,7 +443,11 @@ async function run() {
 
     if (!isApi) console.error(error);
   } finally {
+    clearTimeout(slowMessage);
     if (requestId === state.requestId) {
+      state.controller = null;
+      dom.cancel.hidden = true;
+      dom.requestStatus.hidden = true;
       dom.spinner.hidden = true;
       dom.submit.disabled = false;
     }
@@ -449,6 +469,8 @@ function cacheDom() {
   dom.results = document.getElementById('results');
   dom.spinner = document.getElementById('spinner');
   dom.submit = document.getElementById('submit-button');
+  dom.cancel = document.getElementById('cancel-button');
+  dom.requestStatus = document.getElementById('request-status');
   dom.example = document.getElementById('example-button');
   dom.exampleNote = document.getElementById('example-note');
   dom.sidebar = document.getElementById('sidebar');
@@ -460,6 +482,7 @@ function boot() {
   mountShell({ current: 'solver' });
 
   cacheDom();
+  dom.cancel.addEventListener('click', () => state.controller?.abort());
   MODULES.forEach(m => dom.modulePicker.append(el('option', { value: m.id, text: m.name })));
   dom.modulePicker.addEventListener('change', () => selectModule(dom.modulePicker.value));
 
