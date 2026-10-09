@@ -24,10 +24,10 @@
 <div class="shell">
 
   <nav class="sidebar" id="sidebar" aria-label="Site navigation">
-    <div id="site-nav"></div>
-    <hr class="nav-divider" />
     <p class="nav-heading">Modules</p>
     <ul class="module-list" id="module-list"></ul>
+    <hr class="nav-divider" />
+    <div id="site-nav"></div>
     <footer class="sidebar-foot">
       <a href="/api/docs" target="_blank" rel="noopener">API reference &#8599;</a>
     </footer>
@@ -36,6 +36,10 @@
   <div class="scrim" id="scrim" hidden></div>
 
   <main class="main" id="main">
+    <div class="module-picker field">
+      <label for="module-picker">Choose a module</label>
+      <select id="module-picker"></select>
+    </div>
     <section class="module-head">
       <h1 id="module-title">MathNova</h1>
       <p id="module-blurb" class="blurb"></p>

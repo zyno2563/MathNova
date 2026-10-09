@@ -247,9 +247,10 @@ def test_the_app_passes_label_overrides_to_the_renderer():
 
     source = read("js", "app.js")
 
-    assert "renderGeneric(result, method.labels, steps)" in source, (
-        "app.js calls renderGeneric without the method's label overrides"
-    )
+    assert "renderSolved(result, module, method, steps)" in source
+    renderer = read("js", "results.js")
+    assert "renderGeneric(result, method.labels)" in renderer
+    assert "renderSteps(result, steps, method.labels)" in renderer
 
 
 def test_a_markdown_rule_is_not_rendered_as_dashes():

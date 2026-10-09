@@ -5,6 +5,7 @@
  * whatever small behaviour that particular page needs.
  */
 
+import { initHomeDemo } from './home-demo.js';
 import { createChat } from './assistant.js';
 import { get } from './api.js';
 import { SUPPORT_EMAIL } from './pages.js';
@@ -37,9 +38,11 @@ function initHomePage() {
   // means nothing here.
   const hash = location.hash.replace('#', '').trim();
 
-  if (hash && /^[a-z-]+$/.test(hash)) {
+  if (['fourier-series', 'calculus', 'linear-algebra', 'ode', 'pde', 'numerical', 'transforms'].includes(hash)) {
     location.replace(`/solver/#${hash}`);
+    return;
   }
+  initHomeDemo();
 }
 
 /* ==========================================================

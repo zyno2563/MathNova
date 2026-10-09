@@ -1,5 +1,7 @@
 import sympy as sp
 
+from core.safe_parser import parse_math
+
 from core.transforms.utils import x, w, build_locals, values_equal
 
 
@@ -11,7 +13,7 @@ def parse_expression(expression):
 
     expression = expression.replace("^", "**")
 
-    return sp.sympify(
+    return parse_math(
         expression,
         locals=build_locals(x=x)
     )
@@ -130,7 +132,7 @@ def inverse_fourier_transform(function_expression):
     of F(w).
     """
 
-    F_expr = sp.sympify(
+    F_expr = parse_math(
         function_expression.replace("^", "**"),
         locals=build_locals(w=w)
     )
@@ -191,7 +193,7 @@ def inverse_fourier_sine_transform(function_expression):
     the sine transform is self-reciprocal.
     """
 
-    Fs_expr = sp.sympify(
+    Fs_expr = parse_math(
         function_expression.replace("^", "**"),
         locals=build_locals(w=w)
     )
@@ -242,7 +244,7 @@ def inverse_fourier_cosine_transform(function_expression):
     the cosine transform is self-reciprocal.
     """
 
-    Fc_expr = sp.sympify(
+    Fc_expr = parse_math(
         function_expression.replace("^", "**"),
         locals=build_locals(w=w)
     )
@@ -275,7 +277,7 @@ def shifting_property(function_expression, a_value):
     """
 
     f_expr = parse_expression(function_expression)
-    a = sp.sympify(a_value)
+    a = parse_math(a_value)
 
     F_expr = _forward_full(f_expr)
 
@@ -304,7 +306,7 @@ def scaling_property(function_expression, a_value):
     """
 
     f_expr = parse_expression(function_expression)
-    a = sp.sympify(a_value)
+    a = parse_math(a_value)
 
     if a == 0:
         raise ValueError("a must be non-zero.")

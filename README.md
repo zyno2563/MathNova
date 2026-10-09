@@ -2,11 +2,11 @@
 
 **Engineering mathematics engine — symbolic, verified, and on the web.**
 
-MathNova solves engineering-mathematics problems and *checks its own
-answers*. Every engine cross-verifies its result by an independent
-route — substituting a solution back into the original equation,
-round-tripping a transform, or comparing against a second method — and
-the interface reports that verification alongside the answer.
+MathNova solves engineering-mathematics problems and shows the checks
+available for each answer: substitution into the original equation,
+transform round trips, or comparison against a second method. The
+interface reports passed, failed, or unavailable checks alongside the
+answer; these checks do not constitute a proof of every returned value.
 
 A FastAPI backend exposes the engines as a REST API; a dependency-free
 HTML/CSS/JavaScript frontend consumes it; and an AI assistant can drive
@@ -112,10 +112,9 @@ legacy/      The superseded Streamlit UI. Not imported, not shipped.
 
 Three decisions worth knowing about:
 
-**The engines were not rewritten.** `core/` is exactly the tested code
-it was before the web layer existed; the routers adapt, they don't
-reimplement. Adding an endpoint means writing a request model and one
-call.
+**The mathematics lives in the engines.** The routers validate requests,
+enforce resource limits, and serialize results. Shared expression parsing
+accepts mathematical syntax without evaluating Python code.
 
 **Results carry both forms.** Every symbolic value crosses the wire as
 `{"text": "x**2 + 1", "latex": "x^{2} + 1"}` — the frontend renders the
@@ -214,7 +213,8 @@ is affected.
 
 ```bash
 pip install -r requirements-dev.txt
-pytest -q                 # 247 tests
+python -m pytest -q
+node --test tests/*.mjs    # frontend request, export and print behavior
 ```
 
 `tests/test_api.py` drives the REST layer against the real engines and
@@ -222,6 +222,34 @@ asserts on actual mathematics (that the Fourier coefficients of `f(x)=x`
 are `2(-1)ⁿ⁺¹/n`, that the three root finders agree, that a shift of 3
 prints as `s - 3` and not `s - 3.0`), plus the error contract and the
 serialization layer.
+
+GitHub Actions runs the Python suite on Python 3.12 and the frontend
+tests on Node 22 for pushes to `main` and pull requests.
+
+### Render deployment
+
+The existing service uses `render.yaml`: Python 3.12, one web worker,
+the free plan, and `/api/health` as its health check. Push tested changes
+to the connected `main` branch to trigger deployment when auto-deploy is
+enabled. Check the deployment status and verify the public homepage and
+solver after the build completes. API keys belong in Render's environment
+settings; they must never be committed.
+
+### Accepted expressions
+
+Inputs support explicit arithmetic (`+`, `-`, `*`, `/`, `^` or `**`),
+fractions, ordinary symbol names, standard trigonometric and hyperbolic
+functions, `exp`, `log`, `sqrt`, `Abs`, and `Piecewise` with comparisons.
+Use `2*x`, for example, instead of `2x`. Arbitrary Python code, object
+attributes, indexing, and unlisted function calls are rejected. Expression
+size, nesting, and numeric powers are bounded; expensive calculations also
+run with time and memory limits.
+
+The homepage includes a live editable matrix example. Solver results
+offer copy, LaTeX, text download and print/PDF, with the submitted inputs
+shown alongside the answer. Editing an input marks an older result as
+outdated. Slow requests time out with a retry message; the homepage demo
+also supports cancelling a pending request.
 
 ---
 

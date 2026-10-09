@@ -5,7 +5,7 @@ from typing import List, Optional, Union
 from fastapi import APIRouter
 from pydantic import BaseModel, Field, model_validator
 
-from backend.errors import InvalidInput, solve
+from backend.errors import EngineError, InvalidInput, solve
 from backend.serialization import serialize, success
 from core.algebra.linear_algebra import (
     create_matrix,
@@ -15,6 +15,8 @@ from core.algebra.linear_algebra import (
     inverse,
     parse_matrix,
 )
+
+from core.algebra.working import matrix_working
 
 router = APIRouter(prefix="/linear-algebra", tags=["linear-algebra"])
 
@@ -87,6 +89,28 @@ def _build(request: MatrixRequest):
     return matrix
 
 
+def _add_working(result, matrix, inverse_value=None, eigenspaces=None):
+    """Keep completed answers when optional explanation or checks fail."""
+
+    try:
+        working = solve(
+            "Showing matrix working and checks",
+            matrix_working, matrix, inverse_value, eigenspaces
+        )
+        result.update(serialize(working))
+    except EngineError as error:
+        # A deadline or memory limit is not evidence against the answer.
+        # Report an unknown check instead of discarding completed work or
+        # implying that a verification was run and failed.
+        result["worked_steps"] = []
+        result["worked_steps_error"] = error.message
+        result["verification_checks"] = [{
+            "label": f"Matrix checks unavailable: {error.message}",
+            "verified": None,
+            "residual": None,
+        }]
+
+
 @router.post("/analyze", summary="Determinant, inverse, eigenvalues, eigenvectors")
 def analyze(request: MatrixRequest):
     matrix = _build(request)
@@ -104,21 +128,25 @@ def analyze(request: MatrixRequest):
             "Determinant, inverse and eigen-decomposition require a "
             "square matrix."
         )
-        result["rank"] = int(matrix.rank())
+        result["rank"] = int(solve("Computing the rank", matrix.rank))
+        _add_working(result, matrix)
         return success(result)
 
     result["determinant"] = serialize(
         solve("Computing the determinant", determinant, matrix)
     )
-    result["rank"] = int(matrix.rank())
+    result["rank"] = int(solve("Computing the rank", matrix.rank))
 
     # Each of these can legitimately fail (singular matrix, unsolvable
     # characteristic polynomial) without invalidating the others.
+    inverse_value = None
+    eigenspaces = None
     try:
-        result["inverse"] = serialize(inverse(matrix))
-    except Exception as error:  # noqa: BLE001
+        inverse_value = solve("Computing the inverse", inverse, matrix)
+        result["inverse"] = serialize(inverse_value)
+    except EngineError as error:
         result["inverse"] = None
-        result["inverse_error"] = f"This matrix has no inverse ({error})."
+        result["inverse_error"] = f"Inverse unavailable: {error.message}"
 
     try:
         result["eigenvalues"] = [
@@ -126,23 +154,28 @@ def analyze(request: MatrixRequest):
                 "value": serialize(value),
                 "multiplicity": int(multiplicity)
             }
-            for value, multiplicity in eigenvalues(matrix).items()
+            for value, multiplicity in solve(
+                "Computing eigenvalues", eigenvalues, matrix
+            ).items()
         ]
-    except Exception as error:  # noqa: BLE001
+    except EngineError as error:
         result["eigenvalues"] = None
-        result["eigenvalues_error"] = str(error)
+        result["eigenvalues_error"] = error.message
 
     try:
+        eigenspaces = solve("Computing eigenvectors", eigenvectors, matrix)
         result["eigenvectors"] = [
             {
                 "eigenvalue": serialize(value),
                 "multiplicity": int(multiplicity),
                 "vectors": [serialize(vector) for vector in vectors]
             }
-            for value, multiplicity, vectors in eigenvectors(matrix)
+            for value, multiplicity, vectors in eigenspaces
         ]
-    except Exception as error:  # noqa: BLE001
+    except EngineError as error:
         result["eigenvectors"] = None
-        result["eigenvectors_error"] = str(error)
+        result["eigenvectors_error"] = error.message
+
+    _add_working(result, matrix, inverse_value, eigenspaces)
 
     return success(result)

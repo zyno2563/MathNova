@@ -5,16 +5,20 @@
  * floating assistant — belongs to shell.js, which every page shares.
  */
 
-import { ApiError, get, post } from './api.js';
-import { MODULES, forcingVisibility, renderGeneric, renderSteps } from './modules.js';
+import { ApiError, post } from './api.js';
+import { MODULES, forcingVisibility } from './modules.js';
+import { resultActions } from './result-actions.js';
+import { renderSolved } from './results.js';
 import { walkthroughFor } from './walkthrough.js';
 import { mountShell } from './shell.js';
 import { onChange } from './theme.js';
-import { alert, card, clear, el, empty, renderLatex } from './ui.js';
+import { alert, clear, el, empty, renderLatex } from './ui.js';
 
 const state = {
   module: MODULES[0],
   method: MODULES[0].methods[0],
+  requestId: 0,
+  savedResult: null,
   values: {}
 };
 
@@ -175,6 +179,12 @@ function defaultValues(method) {
 }
 
 function renderModule() {
+  state.requestId++;
+  state.savedResult = null;
+  dom.inputNotice = null;
+  dom.spinner.hidden = true;
+  dom.submit.disabled = false;
+  dom.modulePicker.value = state.module.id;
   dom.title.textContent = state.module.name;
   dom.blurb.textContent = state.module.blurb;
 
@@ -218,6 +228,7 @@ function renderForm() {
   for (const field of visibleFields(method, state.values)) {
     dom.form.append(fieldNode(field));
   }
+  updateInputNotice();
 }
 
 function fieldNode(field) {
@@ -251,6 +262,7 @@ function fieldNode(field) {
 
   control.addEventListener('input', () => {
     state.values[field.name] = control.value;
+    updateInputNotice();
   });
 
   if (field.reactive) {
@@ -263,6 +275,7 @@ function fieldNode(field) {
       }
 
       renderForm();
+      updateInputNotice();
     });
   }
 
@@ -311,6 +324,8 @@ function requestBody() {
  * expression sends a student editing maths that was already correct.
  */
 function headlineFor(code) {
+  if (code === 'request_timeout') return 'The server took too long';
+  if (code === 'request_cancelled') return 'Calculation cancelled';
   if (code === 'network_error' || code === 'bad_response') {
     return 'Could not reach the server';
   }
@@ -327,47 +342,81 @@ function headlineFor(code) {
 }
 
 
-async function run({ silent = false } = {}) {
-  const method = state.method;
+/** Keep the answer tied to the request that produced it, even while editing. */
+function updateInputNotice() {
+  if (!state.savedResult || !dom.inputNotice) return;
 
-  if (!silent) {
-    dom.spinner.hidden = false;
-    dom.submit.disabled = true;
+  let changed = true;
+  try {
+    changed = JSON.stringify(requestBody()) !== JSON.stringify(state.savedResult.input);
+  } catch {
+    // An unfinished edit may not yet be a valid request.
   }
+  dom.inputNotice.hidden = !changed;
+}
+
+function renderSavedResult({ preserveDisclosures = false } = {}) {
+  if (!state.savedResult) return;
+  const { result, module, method, input, fields } = state.savedResult;
+  const disclosures = preserveDisclosures
+    ? [...dom.results.querySelectorAll('details')].map(node => node.open)
+    : [];
+
+  clear(dom.results);
+  dom.results.append(...resultActions(result, module, method, input));
+  dom.inputNotice = el('p', {
+    class: 'result-input-notice', role: 'status', 'aria-live': 'polite', hidden: true,
+    text: 'Inputs changed — compute again. The result below uses the submitted inputs.'
+  });
+  dom.results.append(el('details', { class: 'card result-input-context', open: true }, [
+    el('summary', { text: 'Inputs used for this result' }),
+    el('dl', {}, fields.map(({ label, value }) => el('div', {}, [
+      el('dt', { text: label }),
+      el('dd', { text: value })
+    ])))
+  ]), dom.inputNotice);
+
+  const walkthrough = walkthroughFor(module.id, method.id);
+  const steps = walkthrough && walkthrough.steps;
+  const rendered = renderSolved(result, module, method, steps);
+  for (const node of [].concat(rendered)) {
+    if (node) dom.results.append(node);
+  }
+  if (preserveDisclosures) {
+    [...dom.results.querySelectorAll('details')].forEach((node, index) => {
+      if (index < disclosures.length) node.open = disclosures[index];
+    });
+  }
+  updateInputNotice();
+}
+
+async function run() {
+  const method = state.method;
+  const module = state.module;
+  const requestId = ++state.requestId;
+
+  dom.spinner.hidden = false;
+  dom.submit.disabled = true;
 
   try {
-    const result = await post(method.endpoint, requestBody());
+    const input = requestBody();
+    const fields = visibleFields(method, state.values).map(field => ({
+      label: field.label,
+      value: field.type === 'select'
+        ? (field.options.find(([value]) => String(value) === String(state.values[field.name]))?.[1]
+          ?? state.values[field.name])
+        : String(state.values[field.name] ?? '')
+    }));
+    const result = await post(method.endpoint, input);
 
-    clear(dom.results);
-
-    const walkthrough = walkthroughFor(state.module.id, method.id);
-    const steps = walkthrough && walkthrough.steps;
-
-    let rendered;
-
-    if (typeof method.render === 'function') {
-      // The method draws its own result (a chart, its own tables), so
-      // the worked solution goes in front of it rather than inside.
-      const own = [].concat(method.render(result));
-      const walked = steps
-        ? renderSteps(result, steps, method.labels, { explainOnly: true })
-        : null;
-
-      rendered = walked && walked.card
-        ? [card('How this is solved', [walked.card]), ...own]
-        : own;
-    } else {
-      rendered = renderGeneric(result, method.labels, steps);
-    }
-
-    for (const node of [].concat(rendered)) {
-      if (node) dom.results.append(node);
-    }
-
-    if (!silent) {
-      dom.results.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
-    }
+    if (requestId !== state.requestId || method !== state.method) return;
+    state.savedResult = { result, module, method, input, fields };
+    renderSavedResult();
+    dom.results.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
   } catch (error) {
+    if (requestId !== state.requestId || method !== state.method) return;
+    state.savedResult = null;
+    dom.inputNotice = null;
     const isApi = error instanceof ApiError;
 
     clear(dom.results).append(alert(
@@ -378,8 +427,10 @@ async function run({ silent = false } = {}) {
 
     if (!isApi) console.error(error);
   } finally {
-    dom.spinner.hidden = true;
-    dom.submit.disabled = false;
+    if (requestId === state.requestId) {
+      dom.spinner.hidden = true;
+      dom.submit.disabled = false;
+    }
   }
 }
 
@@ -389,6 +440,7 @@ async function run({ silent = false } = {}) {
 
 function cacheDom() {
   dom.moduleList = document.getElementById('module-list');
+  dom.modulePicker = document.getElementById('module-picker');
   dom.title = document.getElementById('module-title');
   dom.blurb = document.getElementById('module-blurb');
   dom.tabs = document.getElementById('method-tabs');
@@ -408,10 +460,12 @@ function boot() {
   mountShell({ current: 'solver' });
 
   cacheDom();
+  MODULES.forEach(m => dom.modulePicker.append(el('option', { value: m.id, text: m.name })));
+  dom.modulePicker.addEventListener('change', () => selectModule(dom.modulePicker.value));
 
   // Chart colours come from CSS tokens, so a theme swap needs a repaint.
   onChange(() => {
-    if (dom.results.childElementCount) run({ silent: true });
+    renderSavedResult({ preserveDisclosures: true });
   });
 
   const fromHash = MODULES.find(
@@ -423,8 +477,12 @@ function boot() {
     state.method = fromHash.methods[0];
   }
 
+  const matrixPreset = new URL(location.href).searchParams.get('matrix');
+  const hasPreset = state.module.id === 'linear-algebra' && matrixPreset && matrixPreset.length <= 4000;
+  if (hasPreset) state.values = { matrix: matrixPreset };
   buildNav();
   renderModule();
+  if (hasPreset) run();
 
   dom.form.addEventListener('submit', (event) => {
     event.preventDefault();

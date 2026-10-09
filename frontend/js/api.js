@@ -15,8 +15,38 @@ export class ApiError extends Error {
 }
 
 async function request(path, options = {}) {
-  let response;
+  const { timeoutMs = 120000, signal, ...fetchOptions } = options;
+  const controller = new AbortController();
+  let timedOut = false;
+  const cancel = () => controller.abort();
+  if (signal?.aborted) cancel();
+  else signal?.addEventListener('abort', cancel, { once: true });
+  const timer = setTimeout(() => {
+    timedOut = true;
+    controller.abort();
+  }, timeoutMs);
 
+  try {
+    return await readResponse(path, { ...fetchOptions, signal: controller.signal });
+  } catch (cause) {
+    if (controller.signal.aborted) {
+      throw new ApiError(
+        timedOut
+          ? 'The server took too long to respond. It may be waking up or busy. Please try again.'
+          : 'The request was cancelled. You can edit your input and try again.',
+        timedOut ? 'request_timeout' : 'request_cancelled',
+        0
+      );
+    }
+    throw cause;
+  } finally {
+    clearTimeout(timer);
+    signal?.removeEventListener('abort', cancel);
+  }
+}
+
+async function readResponse(path, options) {
+  let response;
   try {
     response = await fetch(path, options);
   } catch (cause) {
@@ -51,14 +81,15 @@ async function request(path, options = {}) {
   return payload.result;
 }
 
-export function post(path, body) {
+export function post(path, body, options = {}) {
   return request(path, {
+    ...options,
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(body)
   });
 }
 
-export function get(path) {
-  return request(path, { method: 'GET' });
+export function get(path, options = {}) {
+  return request(path, { ...options, method: 'GET' });
 }

@@ -220,6 +220,9 @@ def differentiation(request: DifferentiationRequest):
         payload["approximate"] = payload.get("approx_derivative")
         payload["exact"] = payload.get("exact_derivative")
 
+    payload["difference"] = payload["approximate"] - payload["exact"]
+    payload["tolerance"] = max(100 * request.h, 1e-4)
+    payload["verification_description"] = "Absolute difference from the symbolic derivative must be below the displayed tolerance."
     return success(payload)
 
 
@@ -238,6 +241,13 @@ def integration(request: IntegrationRequest):
 
     payload = serialize(result)
     payload["rule"] = request.rule
+    exact = payload.get("exact_integral")
+    if exact is not None:
+        payload["difference"] = payload["integral"] - exact
+        payload["tolerance"] = max(5e-2 * max(abs(exact), 1), 1e-3)
+    else:
+        payload["verified"] = None
+    payload["verification_description"] = "Absolute difference from the symbolic definite integral must be below the displayed tolerance. If no reference integral is available, this result is not verified."
 
     return success(payload)
 

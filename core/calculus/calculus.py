@@ -1,5 +1,7 @@
 import sympy as sp
 
+from core.safe_parser import parse_math
+
 
 x = sp.symbols("x")
 
@@ -25,7 +27,7 @@ def parse_expression(expression):
         "E": sp.E
     }
 
-    return sp.sympify(
+    return parse_math(
         expression,
         locals=allowed_functions
     )

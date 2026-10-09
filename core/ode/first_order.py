@@ -1,5 +1,7 @@
 import sympy as sp
 
+from core.safe_parser import parse_math
+
 
 x, y = sp.symbols("x y", real=True)
 C1 = sp.Symbol("C1")
@@ -28,7 +30,7 @@ def parse_expression(expression):
         "E": sp.E
     }
 
-    return sp.sympify(
+    return parse_math(
         expression,
         locals=allowed_functions
     )
@@ -145,7 +147,7 @@ def bernoulli_equation(P_expression, Q_expression, n_value):
 
     P = parse_expression(P_expression)
     Q = parse_expression(Q_expression)
-    n = sp.sympify(n_value)
+    n = parse_math(n_value)
 
     if n == 1:
         raise ValueError(

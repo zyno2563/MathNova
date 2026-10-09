@@ -8,7 +8,7 @@
 import { lineChart, token } from './chart.js';
 import {
   alert, card, el, empty, formatNumber, isMath,
-  mathRow, stats, table, verificationBadge
+  mathRow, stats, table
 } from './ui.js';
 
 /* ==========================================================
@@ -81,54 +81,8 @@ const HIDDEN_KEYS = new Set([
   'x_values', 'y_values', 'points', 'harmonics', 'an', 'bn', 'a0',
   'matrix', 'shape', 'is_square', 'eigenvalues', 'eigenvectors',
   'accuracy', 'entries', 'rows', 'cols', 'constants_solved',
-  'derivative_steps', 'inverse_coefficients'
+  'derivative_steps', 'inverse_coefficients', 'worked_steps', 'worked_steps_error', 'verification_checks', 'verification'
 ]);
-
-function verificationSection(result) {
-  const nested = result.verification;
-
-  // The complete solution reports three separate checks rather than one
-  // flag: the CF against the homogeneous equation, the PI against the
-  // forcing term, and their sum against the whole equation.
-  if (nested && typeof nested === 'object') {
-    const checks = [
-      ['cf', '✓ CF satisfies F(D)y = 0', '⚠ CF unverified'],
-      ['pi', '✓ PI satisfies F(D)y = X', '⚠ PI unverified'],
-      ['complete', '✓ Complete solution verified', '⚠ Complete solution unverified']
-    ];
-
-    const parts = checks
-      .filter(([key]) => nested[key])
-      .map(([key, good, warn]) =>
-        verificationBadge(nested[key].verified, { good, warn }));
-
-    if (parts.length) {
-      return el('div', { class: 'result-row' }, [
-        el('div', { style: 'display:flex;flex-wrap:wrap;gap:8px' }, parts)
-      ]);
-    }
-  }
-
-  if (!('verified' in result)) return null;
-
-  const badges = [verificationBadge(result.verified)];
-
-  if ('verified_u' in result || 'verified_v' in result) {
-    badges.length = 0;
-    badges.push(
-      verificationBadge(result.verified_u, {
-        good: '✓ u verified', warn: '⚠ u unverified'
-      }),
-      verificationBadge(result.verified_v, {
-        good: '✓ v verified', warn: '⚠ v unverified'
-      })
-    );
-  }
-
-  return el('div', { class: 'result-row' }, [
-    el('div', { style: 'display:flex;flex-wrap:wrap;gap:8px' }, badges)
-  ]);
-}
 
 /** Default renderer: equations first, then numbers, then any table. */
 /**
@@ -262,8 +216,6 @@ export function renderGeneric(result, labels = null, steps = null) {
   const caption = (key, fallback) =>
     (labels && labels[key]) || fallback;
 
-  const verification = verificationSection(result);
-  if (verification) nodes.push(verification);
 
   if (steps) {
     // The worked solution replaces the flat list of equations, so the
@@ -484,7 +436,7 @@ export const MODULES = [
 
         const inverseNodes = result.inverse
           ? [mathRow(null, result.inverse)]
-          : [alert('warn', 'No inverse', result.inverse_error)];
+          : [alert('warn', 'Inverse unavailable', result.inverse_error)];
 
         nodes.push(card('Inverse  A⁻¹', inverseNodes));
 
@@ -800,12 +752,6 @@ export const MODULES = [
         ],
         render(result) {
           const nodes = [card('Solution', [
-            el('div', { style: 'display:flex;flex-wrap:wrap;gap:8px' }, [
-              verificationBadge(result.verified, {
-                good: '✓ Matches numpy.linalg.solve',
-                warn: '⚠ Disagrees with the reference solver'
-              })
-            ]),
             stats(result.solution.map((value, index) => [`x${index + 1}`, formatNumber(value)]))
           ])];
 

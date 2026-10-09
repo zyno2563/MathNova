@@ -8,6 +8,8 @@ core.ode.first_order (separable, linear, Bernoulli, exact).
 from typing import List, Literal, Optional, Union
 
 import sympy as sp
+
+from core.safe_parser import parse_math
 from fastapi import APIRouter
 from pydantic import BaseModel, Field, model_validator
 
@@ -50,9 +52,17 @@ def to_exact(value):
         if not text:
             raise InvalidInput("Empty coefficient.")
 
-        return sp.sympify(text)
+        try:
+            return parse_math(text)
+        except ValueError as error:
+            raise InvalidInput(f"Invalid coefficient: {error}") from error
 
     return sp.Rational(str(value))
+
+
+def _exact_coefficients(values):
+    """Run string parsing inside the computation guard, as one operation."""
+    return [to_exact(value) for value in values]
 
 
 class Forcing(BaseModel):
@@ -164,7 +174,7 @@ def _compute_particular_integral(coefficients, forcing):
 
 @router.post("/complementary-function", summary="Solve F(D)y = 0")
 def complementary_function_endpoint(request: CoefficientsRequest):
-    coefficients = [to_exact(value) for value in request.coefficients]
+    coefficients = solve("Reading coefficients", _exact_coefficients, request.coefficients)
 
     auxiliary, roots, cf = solve(
         "Computing the complementary function",
@@ -183,7 +193,7 @@ def complementary_function_endpoint(request: CoefficientsRequest):
 
 @router.post("/particular-integral", summary="Solve F(D)y = X for the PI")
 def particular_integral_endpoint(request: ParticularIntegralRequest):
-    coefficients = [to_exact(value) for value in request.coefficients]
+    coefficients = solve("Reading coefficients", _exact_coefficients, request.coefficients)
 
     result, forcing_text = _compute_particular_integral(
         coefficients, request.forcing
@@ -197,7 +207,7 @@ def particular_integral_endpoint(request: ParticularIntegralRequest):
 
 @router.post("/complete-solution", summary="Solve F(D)y = X for y = CF + PI")
 def complete_solution_endpoint(request: ParticularIntegralRequest):
-    coefficients = [to_exact(value) for value in request.coefficients]
+    coefficients = solve("Reading coefficients", _exact_coefficients, request.coefficients)
 
     auxiliary, roots, cf = solve(
         "Computing the complementary function",

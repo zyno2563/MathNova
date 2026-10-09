@@ -1,13 +1,14 @@
 import sympy as sp
 
+from core.safe_parser import parse_math
+
 
 x = sp.symbols("x")
 
 
-def parse_function(expression):
+def parse_symbolic_function(expression):
     """
-    Convert a mathematical expression entered by the user
-    into a numerical Python function.
+    Parse f(x) into a picklable expression, suitable for guarded execution.
     """
 
     expression = expression.replace("^", "**")
@@ -25,13 +26,21 @@ def parse_function(expression):
         "E": sp.E
     }
 
-    symbolic_expression = sp.sympify(
+    return parse_math(
         expression,
         locals=allowed_functions
     )
 
+
+def function_from_expression(symbolic_expression):
+    """Build a numerical function from an already validated expression."""
     return sp.lambdify(
         x,
         symbolic_expression,
         modules=["numpy"]
     )
+
+
+def parse_function(expression):
+    """Convert a public math expression into a numerical function."""
+    return function_from_expression(parse_symbolic_function(expression))

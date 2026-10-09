@@ -19,6 +19,8 @@ from typing import Any, Callable, Dict, List
 
 import sympy as sp
 
+from core.safe_parser import parse_math
+
 from core.algebra.linear_algebra import (
     determinant,
     eigenvalues,
@@ -189,7 +191,7 @@ def _coefficients(text):
         part = part.strip()
 
         if part:
-            values.append(sp.sympify(part))
+            values.append(parse_math(part))
 
     if len(values) < 2:
         raise ValueError("At least two coefficients are required.")

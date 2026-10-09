@@ -248,6 +248,7 @@ export function lineChart({ x, series, xLabel = 'x', yLabel = 'f(x)' }) {
 
       const swatch = el('span', { class: 'swatch' });
       swatch.style.background = line.color;
+      swatch.style.setProperty('--series-color', line.color);
 
       rows.push(el('div', { class: 'tip-row' }, [
         swatch,
@@ -269,6 +270,7 @@ export function lineChart({ x, series, xLabel = 'x', yLabel = 'f(x)' }) {
     series.map((line) => {
       const swatch = el('span', { class: 'swatch' });
       swatch.style.background = line.color;
+      swatch.style.setProperty('--series-color', line.color);
       return el('span', { class: 'key' }, [swatch, line.name]);
     })
   );

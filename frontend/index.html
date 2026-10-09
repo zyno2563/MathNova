@@ -36,16 +36,52 @@
     <section class="hero">
       <h1>Engineering mathematics,<br />worked and checked.</h1>
       <p class="lede">
-        MathNova solves the mathematics an engineering course actually
-        sets &#8212; transforms, differential equations, matrices, numerical
-        methods &#8212; and checks each answer by a second, independent route
-        before showing it to you.
+        Solve transforms, differential equations, matrices, and numerical
+        methods. Explore the working, inspect available checks, and take
+        the solution into your notes.
       </p>
 
       <div class="hero-actions">
         <a class="button primary large" href="/solver/">Open the Solver</a>
-        <a class="button ghost large" href="/assistant/">Ask the AI Assistant</a>
+        <a class="button ghost large" href="#try-example">Try a live example</a>
       </div>
+      <p class="hero-note">No account needed · Worked examples included · Copy or print your results</p>
+    </section>
+
+    <section class="home-demo panel" id="try-example" aria-labelledby="demo-title">
+      <div class="demo-intro">
+        <p class="eyebrow">Try MathNova</p>
+        <h2 id="demo-title">A small matrix. A complete solution.</h2>
+        <p>Change the entries, run the calculation, and see what the engine returns.</p>
+      </div>
+      <div class="demo-grid">
+        <form id="home-demo-form" class="demo-form">
+          <div class="field">
+            <label for="demo-example">Start with an example</label>
+            <select id="demo-example">
+              <option value="symmetric">Symmetric matrix</option>
+              <option value="singular">Singular matrix</option>
+              <option value="diagonal">Diagonal matrix</option>
+            </select>
+          </div>
+          <div class="field">
+            <label for="demo-matrix">Matrix A</label>
+            <textarea id="demo-matrix" rows="3" maxlength="4000" required aria-describedby="demo-hint">2, 1
+1, 2</textarea>
+            <p class="hint" id="demo-hint">One row per line, entries separated by commas.</p>
+          </div>
+          <button class="button primary" id="demo-run" type="submit">Run live example</button>
+          <button class="button" id="demo-cancel" type="button" hidden>Cancel request</button>
+        </form>
+        <div class="demo-result">
+          <h3>Your result</h3>
+          <div id="demo-output" aria-live="polite">
+            <p class="hint">Run the example to see the answer and its checks.</p>
+          </div>
+          <a id="demo-full" href="/solver/#linear-algebra">Open full solution →</a>
+        </div>
+      </div>
+      <noscript><p>The interactive example needs JavaScript. Enable it to use MathNova's solver.</p></noscript>
     </section>
 
     <h2>What it covers</h2>
@@ -100,11 +136,10 @@
 
     <p>
       A symbolic result that looks plausible and is wrong is worse than
-      no result. So every engine verifies its own work by a route that
-      does not reuse the step being tested: a solved ODE is substituted
-      back into the original operator and the residual must be zero, an
-      inverse transform is transformed forward again, a linear system is
-      re-multiplied, a derivative is re-derived implicitly.
+      no result. MathNova shows the checks its engines can perform:
+      substituting an ODE solution back into the equation, checking matrix
+      identities, or comparing a numerical approximation with a reference
+      value. A result without an available check is marked as not verified.
     </p>
 
     <p>

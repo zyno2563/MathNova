@@ -8,7 +8,7 @@ from pydantic import BaseModel, Field
 
 from backend.errors import InvalidInput, solve
 from backend.serialization import as_number, success
-from core.calculus.parser import parse_function
+from core.calculus.parser import function_from_expression, parse_symbolic_function
 from core.fourier.series import (
     calculate_absolute_error,
     calculate_coefficients,
@@ -67,14 +67,17 @@ def _sample(function, x_values):
 
 @router.post("/series", summary="Expand f(x) as a Fourier series")
 def fourier_series(request: SeriesRequest):
-    # Not isolated: parse_function lambdifies, and a live callable
-    # cannot be returned from a child process. It is a cheap step, and
-    # the expensive symbolic work below runs under the guard.
+    # Symbolic parsing can simplify mathematical functions, so it needs
+    # the same deadline as calculation. Only compiling the validated
+    # expression stays in-process: a live callable cannot cross a pipe.
+    expression = solve(
+        "Parsing f(x)", parse_symbolic_function, request.expression
+    )
     function = solve(
-        "Parsing f(x)", parse_function, request.expression, isolated=False
+        "Preparing f(x)", function_from_expression, expression, isolated=False
     )
 
-    # parse_function lambdifies without checking that the result is
+    # lambdify does not check that the result is
     # callable on a real number; fail early with a clear message.
     try:
         function(0.0)

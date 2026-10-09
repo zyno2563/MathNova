@@ -115,7 +115,7 @@ function navHtml(current) {
       </a>
     </li>`).join('');
 
-  const secondary = SECONDARY.map((page) => `
+  const secondary = SECONDARY.filter(page => current !== 'solver' || !['terms', 'privacy', 'disclaimer'].includes(page.id)).map((page) => `
     <li>
       <a href="${page.href}" data-page="${page.id}"
          ${page.id === current ? 'aria-current="page"' : ''}>${page.label}</a>

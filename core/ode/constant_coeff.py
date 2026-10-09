@@ -1,5 +1,7 @@
 import sympy as sp
 
+from core.safe_parser import parse_math
+
 
 x = sp.symbols("x", real=True)
 m = sp.symbols("m")
@@ -25,7 +27,7 @@ def parse_expression(expression):
     "E": sp.E
 }
 
-    return sp.sympify(
+    return parse_math(
         expression,
         locals=allowed_functions
     )
@@ -283,7 +285,7 @@ def particular_integral_exponential(
     roots = sp.roots(F, m)
 
     multiplicity = roots.get(
-        sp.sympify(a),
+        parse_math(a),
         0
     )
 

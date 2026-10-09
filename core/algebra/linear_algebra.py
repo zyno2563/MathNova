@@ -1,12 +1,14 @@
 import sympy as sp
 
+from core.safe_parser import parse_math
+
 
 def create_matrix(matrix_data):
     """
     Create a SymPy matrix from nested lists.
     """
 
-    return sp.Matrix(matrix_data)
+    return sp.Matrix([[parse_math(value) for value in row] for row in matrix_data])
 
 
 def parse_matrix(matrix_text):
@@ -28,7 +30,7 @@ def parse_matrix(matrix_text):
         ]
 
         rows.append([
-            sp.sympify(value)
+            parse_math(value)
             for value in values
         ])
 

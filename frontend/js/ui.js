@@ -37,7 +37,7 @@ export function renderLatex(target, latex, displayMode = true) {
       window.katex.render(latex, target, {
         displayMode,
         throwOnError: false,
-        output: 'html'
+        output: 'htmlAndMathml'
       });
       return target;
     } catch (error) {

@@ -1,5 +1,7 @@
 import sympy as sp
 
+from core.safe_parser import parse_math
+
 from core.transforms.utils import t, s, build_locals, values_equal
 
 
@@ -11,7 +13,7 @@ def parse_expression(expression):
 
     expression = expression.replace("^", "**")
 
-    return sp.sympify(
+    return parse_math(
         expression,
         locals=build_locals(t=t)
     )
@@ -61,7 +63,7 @@ def inverse_laplace_transform(function_expression):
         f(t) = L^-1{F(s)}
     """
 
-    F_expr = sp.sympify(
+    F_expr = parse_math(
         function_expression.replace("^", "**"),
         locals=build_locals(s=s)
     )
@@ -97,7 +99,7 @@ def first_shifting_theorem(function_expression, a_value):
     """
 
     f_expr = parse_expression(function_expression)
-    a = sp.sympify(a_value)
+    a = parse_math(a_value)
 
     F_expr = sp.laplace_transform(
         f_expr, t, s, noconds=True
@@ -136,7 +138,7 @@ def second_shifting_theorem(function_expression, a_value):
     """
 
     f_expr = parse_expression(function_expression)
-    a = sp.sympify(a_value)
+    a = parse_math(a_value)
 
     F_expr = sp.laplace_transform(
         f_expr, t, s, noconds=True

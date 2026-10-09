@@ -1,5 +1,7 @@
 import sympy as sp
 
+from core.safe_parser import parse_math
+
 from core.transforms.utils import n, z, build_locals, values_equal
 
 
@@ -14,7 +16,7 @@ def parse_expression(expression):
 
     expression = expression.replace("^", "**")
 
-    parsed = sp.sympify(
+    parsed = parse_math(
         expression,
         locals=build_locals(n=n)
     )
@@ -194,7 +196,7 @@ def inverse_z_transform(function_expression):
     conjugate pairs.
     """
 
-    X_expr = sp.sympify(
+    X_expr = parse_math(
         function_expression.replace("^", "**"),
         locals=build_locals(z=z)
     )
@@ -307,8 +309,8 @@ def linearity_property(
     x1 = parse_expression(sequence_1_expression)
     x2 = parse_expression(sequence_2_expression)
 
-    a = sp.sympify(a_value)
-    b = sp.sympify(b_value)
+    a = parse_math(a_value)
+    b = parse_math(b_value)
 
     X1 = z_transform_expr(x1)
     X2 = z_transform_expr(x2)
@@ -340,7 +342,7 @@ def scaling_theorem(sequence_expression, a_value):
     """
 
     x_n = parse_expression(sequence_expression)
-    a = sp.sympify(a_value)
+    a = parse_math(a_value)
 
     if a == 0:
         raise ValueError("a must be non-zero.")
@@ -411,7 +413,7 @@ def initial_value_theorem(function_expression):
         x(0) = lim_(z -> oo) X(z)
     """
 
-    X_expr = sp.sympify(
+    X_expr = parse_math(
         function_expression.replace("^", "**"),
         locals=build_locals(z=z)
     )
@@ -442,7 +444,7 @@ def final_value_theorem(function_expression):
         lim_(n -> oo) x(n) = lim_(z -> 1) (z - 1) X(z)
     """
 
-    X_expr = sp.sympify(
+    X_expr = parse_math(
         function_expression.replace("^", "**"),
         locals=build_locals(z=z)
     )

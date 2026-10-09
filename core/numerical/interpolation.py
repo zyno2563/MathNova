@@ -1,5 +1,7 @@
 import sympy as sp
 
+from core.safe_parser import parse_math
+
 from core.numerical.utils import x
 
 
@@ -12,7 +14,7 @@ def _to_exact(value):
     """
 
     if isinstance(value, (int, sp.Integer, sp.Rational)):
-        return sp.sympify(value)
+        return parse_math(value)
 
     return sp.Rational(str(value))
 

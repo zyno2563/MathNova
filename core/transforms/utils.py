@@ -39,7 +39,7 @@ COMMON_FUNCTIONS = {
 
 def build_locals(**symbol_bindings):
     """
-    Build the locals dict passed to sp.sympify: the
+    Build the symbol/function bindings passed to the safe parser: the
     common function names, plus the caller's chosen
     free-variable bindings (e.g. t=t for Laplace).
     """
